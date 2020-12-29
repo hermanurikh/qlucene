@@ -35,5 +35,5 @@ class SizeBasedReducer @Autowired constructor(
         return heap.toMutableList().sortedWith(ranker)
     }
 
-    override fun accepts(term: Term) = true
+    override fun canExecute(term: Term) = true
 }

@@ -8,5 +8,5 @@ import org.springframework.stereotype.Component
 class FileNameMapper : Mapper {
     override fun map(documents: List<DocumentSearchResult>) = documents.map { it.fileName }
 
-    override fun accepts(term: Term) = true
+    override fun canExecute(term: Term) = true
 }

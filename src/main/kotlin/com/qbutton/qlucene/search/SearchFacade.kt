@@ -19,15 +19,16 @@ class SearchFacade @Autowired constructor(
     fun search(term: Term): List<String> {
         val documents = mutableListOf<DocumentSearchResult>()
         for (index in indexes) {
-            if (index.accepts(term)) {
+            // we can have several indexes for the same term type => we can scale by putting them to different hosts
+            if (index.canExecute(term)) {
                 documents.addAll(index.find(term))
             }
         }
 
-        val reducer = reducers.find { it.accepts(term) }
+        val reducer = reducers.find { it.canExecute(term) }
         val reducedDocuments = reducer?.reduce(documents) ?: documents
 
-        val mapper = mappers.find { it.accepts(term) }
+        val mapper = mappers.find { it.canExecute(term) }
 
         return mapper?.map(reducedDocuments)
                 ?: throw IllegalStateException("No mapper found to map documents to strings")
