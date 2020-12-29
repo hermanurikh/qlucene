@@ -5,5 +5,5 @@ import com.qbutton.qlucene.dto.DocumentSearchResult
 import com.qbutton.qlucene.dto.Term
 
 interface Index : Acceptable {
-    fun find(term: Term): List<DocumentSearchResult>
+    fun find(term: Term): Set<DocumentSearchResult>
 }

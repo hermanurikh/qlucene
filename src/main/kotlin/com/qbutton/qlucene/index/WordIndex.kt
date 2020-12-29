@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class WordIndex : Index {
-    override fun find(term: Term): List<DocumentSearchResult> {
+    override fun find(term: Term): Set<DocumentSearchResult> {
         TODO("Not yet implemented")
     }
 
