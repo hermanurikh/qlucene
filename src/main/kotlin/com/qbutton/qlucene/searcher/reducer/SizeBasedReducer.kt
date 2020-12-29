@@ -1,8 +1,8 @@
-package com.qbutton.qlucene.search.reducer
+package com.qbutton.qlucene.searcher.reducer
 
 import com.qbutton.qlucene.dto.DocumentSearchResult
 import com.qbutton.qlucene.dto.Term
-import com.qbutton.qlucene.search.ranker.SizeBasedRanker
+import com.qbutton.qlucene.searcher.ranker.SizeBasedRanker
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.PropertySource

@@ -1,10 +1,10 @@
-package com.qbutton.qlucene.search
+package com.qbutton.qlucene.searcher
 
 import com.qbutton.qlucene.dto.DocumentSearchResult
 import com.qbutton.qlucene.dto.Term
 import com.qbutton.qlucene.index.Index
-import com.qbutton.qlucene.search.mapper.Mapper
-import com.qbutton.qlucene.search.reducer.Reducer
+import com.qbutton.qlucene.searcher.mapper.Mapper
+import com.qbutton.qlucene.searcher.reducer.Reducer
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.lang.IllegalStateException

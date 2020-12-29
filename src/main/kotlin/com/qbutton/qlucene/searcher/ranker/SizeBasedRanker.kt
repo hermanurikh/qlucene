@@ -1,4 +1,4 @@
-package com.qbutton.qlucene.search.ranker
+package com.qbutton.qlucene.searcher.ranker
 
 import com.qbutton.qlucene.dto.DocumentSearchResult
 import org.springframework.stereotype.Component
