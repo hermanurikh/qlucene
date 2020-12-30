@@ -21,13 +21,12 @@ internal class WordTokenizerTest {
             return listOf(
                 Arguments.of("hello world", listOf("hello", "world")),
                 Arguments.of("hi, there,hi Leo", listOf("hi", "there", "hi", "Leo")),
-                // either that's => that s, or aujourd'hui will not be split
-                Arguments.of("that's a no?", listOf("that", "s", "a", "no")),
+                Arguments.of("that's a no?", listOf("that's", "a", "no")),
                 Arguments.of("dog, cat, tarantula; tortoise.", listOf("dog", "cat", "tarantula", "tortoise")),
                 Arguments.of(
                     "Salut mon homme, comment ça va aujourd'hui? Ce sera Noël puis Pâques bientôt.",
                     listOf(
-                        "Salut", "mon", "homme", "comment", "ça", "va", "aujourd", "hui", "Ce",
+                        "Salut", "mon", "homme", "comment", "ça", "va", "aujourd'hui", "Ce",
                         "sera", "Noël", "puis", "Pâques", "bientôt"
                     )
                 ),

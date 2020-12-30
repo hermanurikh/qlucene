@@ -1,10 +1,10 @@
 package com.qbutton.qlucene.updater.tokenizer
 
 import org.springframework.stereotype.Component
+import java.text.BreakIterator
 
 @Component
-class WordTokenizer : Tokenizer() {
-    // splits into words according to the best understanding of word is, see tests for more
-    // basically, split on all punctuation excluding '_' and '-' or whitespaces
-    override fun tokenize(rawText: String) = rawText.split("[[\\p{Punct}&&[^_-]]\\s]+".toRegex()).filter { it.isNotBlank() }
+class WordTokenizer : BreakIteratorTokenizer() {
+    // splits into words according to BreakIterator's understanding of word is, see tests for more
+    override fun getBreakIterator() = BreakIterator.getWordInstance()!!
 }
