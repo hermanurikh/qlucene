@@ -5,11 +5,9 @@ import com.qbutton.qlucene.dto.Term
 import com.qbutton.qlucene.searcher.ranker.SizeBasedRanker
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.context.annotation.PropertySource
 import org.springframework.stereotype.Component
-import java.util.*
+import java.util.PriorityQueue
 
-@PropertySource("classpath:search.properties")
 @Component
 class SizeBasedReducer @Autowired constructor(
     private val ranker: SizeBasedRanker,
