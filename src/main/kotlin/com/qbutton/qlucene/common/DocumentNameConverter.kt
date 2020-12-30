@@ -1,8 +1,7 @@
 package com.qbutton.qlucene.common
 
 import org.springframework.stereotype.Component
-import java.lang.IllegalStateException
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 /*
@@ -12,9 +11,9 @@ This is to unify them - as the paths used as keys may be very long of very short
  */
 @Component
 class DocumentNameConverter {
-    private final val fileNameToId = ConcurrentHashMap<String,String>()
+    private final val fileNameToId = ConcurrentHashMap<String, String>()
 
-    fun toId(name: String) : String {
+    fun toId(name: String): String {
         return fileNameToId.computeIfAbsent(name) { UUID.randomUUID().toString() }
     }
 

@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component
 
 @Component
 class SentenceIndex @Autowired constructor(
-        @Value("\${sentence.index.enabled}")
-        private val isSentenceIndexEnabled : Boolean
+    @Value("\${sentence.index.enabled}")
+    private val isSentenceIndexEnabled: Boolean
 ) : Index() {
 
     override fun canExecute(term: Term) = term is Sentence && isSentenceIndexEnabled

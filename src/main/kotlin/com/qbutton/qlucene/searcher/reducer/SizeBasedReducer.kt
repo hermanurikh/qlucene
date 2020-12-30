@@ -13,19 +13,19 @@ class SizeBasedReducer @Autowired constructor(
     private val ranker: SizeBasedRanker,
     @Value("\${reducer.size-based.max-size}")
     private val maxSize: Int
-) : Reducer  {
+) : Reducer() {
     override fun reduce(documents: List<DocumentSearchResult>): List<DocumentSearchResult> {
 
         if (documents.size <= maxSize) {
             return documents.sortedWith(ranker)
         }
 
-        //a heap to find top K elements, reversed comparison for "losing" elements to be on top of the heap
+        // a heap to find top K elements, reversed comparison for "losing" elements to be on top of the heap
         val heap = PriorityQueue<DocumentSearchResult> { o1, o2 -> ranker.compare(o2, o1) }
 
         for (document in documents) {
             heap.offer(document)
-            if (heap.size > maxSize ) {
+            if (heap.size > maxSize) {
                 heap.poll()
             }
         }

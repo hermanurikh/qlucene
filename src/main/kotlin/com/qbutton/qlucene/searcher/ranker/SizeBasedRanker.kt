@@ -5,6 +5,6 @@ import org.springframework.stereotype.Component
 
 @Component
 class SizeBasedRanker : Comparator<DocumentSearchResult> {
-    override fun compare(o1: DocumentSearchResult?, o2: DocumentSearchResult?)
-            = o2!!.termOccurrences.compareTo(o1!!.termOccurrences)
+    override fun compare(o1: DocumentSearchResult?, o2: DocumentSearchResult?) =
+        o2!!.termOccurrences.compareTo(o1!!.termOccurrences)
 }

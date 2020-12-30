@@ -4,4 +4,3 @@ enum class Operation {
     CREATE,
     DELETE
 }
-

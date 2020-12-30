@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component
 
 @Component
 class FileNameMapper @Autowired constructor(
-        private val documentNameConverter: DocumentNameConverter
-) : Mapper {
+    private val documentNameConverter: DocumentNameConverter
+) : Mapper() {
     override fun map(documents: List<DocumentSearchResult>) = documents.map { documentNameConverter.toName(it.fileId) }
 
     override fun canExecute(term: Term) = true

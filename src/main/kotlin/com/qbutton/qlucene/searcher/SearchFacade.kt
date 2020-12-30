@@ -11,9 +11,9 @@ import java.lang.IllegalStateException
 
 @Component
 class SearchFacade @Autowired constructor(
-        private val indexes: List<Index>,
-        private val reducers: List<Reducer>,
-        private val mappers: List<Mapper>
+    private val indexes: List<Index>,
+    private val reducers: List<Reducer>,
+    private val mappers: List<Mapper>
 ) {
 
     fun search(term: Term): List<String> {
@@ -31,6 +31,6 @@ class SearchFacade @Autowired constructor(
         val mapper = mappers.find { it.canExecute(term) }
 
         return mapper?.map(reducedDocuments)
-                ?: throw IllegalStateException("No mapper found to map documents to strings")
+            ?: throw IllegalStateException("No mapper found to map documents to strings")
     }
 }

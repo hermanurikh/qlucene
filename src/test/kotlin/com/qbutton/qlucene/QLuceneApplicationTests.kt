@@ -9,5 +9,4 @@ class QLuceneApplicationTests {
     @Test
     fun contextLoads() {
     }
-
 }

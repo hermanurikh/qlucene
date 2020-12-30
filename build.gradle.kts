@@ -5,6 +5,7 @@ plugins {
     id("io.spring.dependency-management") version "1.0.10.RELEASE"
     kotlin("jvm") version "1.4.21"
     kotlin("plugin.spring") version "1.4.21"
+    id("org.jlleitschuh.gradle.ktlint") version "9.4.1"
 }
 
 group = "com.qbutton"
@@ -15,10 +16,12 @@ repositories {
     mavenCentral()
 }
 
+apply(plugin = "org.jlleitschuh.gradle.ktlint")
+
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib")
     implementation("com.googlecode.java-diff-utils:diffutils:1.3.0")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
