@@ -1,7 +1,6 @@
 package com.qbutton.qlucene.searcher.reducer
 
 import com.qbutton.qlucene.dto.DocumentSearchResult
-import com.qbutton.qlucene.dto.Term
 import com.qbutton.qlucene.searcher.ranker.SizeBasedRanker
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -32,6 +31,4 @@ class SizeBasedReducer @Autowired constructor(
 
         return heap.toMutableList().sortedWith(ranker)
     }
-
-    override fun canExecute(term: Term) = true
 }

@@ -3,6 +3,7 @@ package com.qbutton.qlucene.index
 import com.qbutton.qlucene.common.Executable
 import com.qbutton.qlucene.dto.DocumentSearchResult
 import com.qbutton.qlucene.dto.Term
+import com.qbutton.qlucene.dto.UpdateIndexInput
 import com.qbutton.qlucene.updater.Operation
 import java.util.concurrent.ConcurrentHashMap
 
@@ -18,9 +19,9 @@ abstract class Index : Executable {
             ?.toSet() ?: emptySet()
     }
 
-    fun update(term: Term, operation: Operation, fileId: String, count: Int) {
-        val termMap = storage.computeIfAbsent(term) { ConcurrentHashMap() }
-        val delta = if (operation == Operation.CREATE) count else -count
-        termMap.merge(fileId, delta, Integer::sum)
+    fun update(updateInfo: UpdateIndexInput) {
+        val termMap = storage.computeIfAbsent(updateInfo.term) { ConcurrentHashMap() }
+        val delta = if (updateInfo.operation == Operation.CREATE) updateInfo.count else -updateInfo.count
+        termMap.merge(updateInfo.fileId, delta, Integer::sum)
     }
 }

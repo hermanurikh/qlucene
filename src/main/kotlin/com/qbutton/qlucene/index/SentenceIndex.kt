@@ -5,6 +5,8 @@ import com.qbutton.qlucene.dto.Term
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import kotlin.reflect.KClass
+import kotlin.reflect.full.isSubclassOf
 
 @Component
 class SentenceIndex @Autowired constructor(
@@ -12,5 +14,5 @@ class SentenceIndex @Autowired constructor(
     private val isSentenceIndexEnabled: Boolean
 ) : Index() {
 
-    override fun canExecute(term: Term) = term is Sentence && isSentenceIndexEnabled
+    override fun canExecute(clazz: KClass<out Term>) = clazz.isSubclassOf(Sentence::class) && isSentenceIndexEnabled
 }
