@@ -11,6 +11,7 @@ abstract class Index : Executable {
     private val storage = ConcurrentHashMap<Term, ConcurrentHashMap<String, Int>>()
 
     // TODO think about ignoring case
+    // TODO think about size of the index whether it will always fit in memory
     fun find(term: Term): Set<DocumentSearchResult> {
         return storage[term]
             ?.entries

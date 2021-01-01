@@ -1,7 +1,7 @@
 package com.qbutton.qlucene.updater
 
 import com.qbutton.qlucene.dto.UpdateIndexInput
-import com.qbutton.qlucene.fileaccess.FileReader
+import com.qbutton.qlucene.fileaccess.FileFacade
 import com.qbutton.qlucene.index.Index
 import com.qbutton.qlucene.updater.tokenizer.Tokenizer
 import org.springframework.beans.factory.annotation.Autowired
@@ -12,13 +12,13 @@ class UpdaterFacade @Autowired constructor(
     private val diffCalculator: DiffCalculator,
     private val tokenizers: List<Tokenizer>,
     private val indices: List<Index>,
-    private val fileReader: FileReader
+    private val fileFacade: FileFacade
 ) {
     // todo dont forget tests with empty files
     fun update(fileId: String) {
-        // todo we may need a lock on file here not to process 2 files simultanously
-        val oldFile = fileReader.getLastIndexedContents(fileId)
-        val newFile = fileReader.readFromFileSystem(fileId)
+        // todo we may need a lock on file here not to process same file simultaneously
+        val oldFile = fileFacade.getLastIndexedContents(fileId)
+        val newFile = fileFacade.readFromFileSystem(fileId)
         // loading files up to 10MB (which was a top limit in requirements) and comparing the tokens looks almost instant (< 1 second)
         for (tokenizer in tokenizers) {
             val oldTokens = tokenizer.tokenize(oldFile)
@@ -30,5 +30,6 @@ class UpdaterFacade @Autowired constructor(
                 .map { UpdateIndexInput(tokenizer.toTerm(it.token), it.operation, fileId, it.count) }
                 .forEach { indexUpdateInfo -> filteredIndices.forEach { it.update(indexUpdateInfo) } }
         }
+        fileFacade.updateContents(fileId, newFile)
     }
 }
