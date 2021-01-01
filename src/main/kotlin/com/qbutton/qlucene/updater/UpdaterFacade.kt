@@ -18,7 +18,7 @@ class UpdaterFacade @Autowired constructor(
     fun update(fileId: String) {
         // todo we may need a lock on file here not to process 2 files simultanously
         val oldFile = fileReader.getLastIndexedContents(fileId)
-        val newFile = fileReader.getContents(fileId)
+        val newFile = fileReader.readFromFileSystem(fileId)
         // loading files up to 10MB (which was a top limit in requirements) and comparing the tokens looks almost instant (< 1 second)
         for (tokenizer in tokenizers) {
             val oldTokens = tokenizer.tokenize(oldFile)

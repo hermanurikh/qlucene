@@ -10,12 +10,12 @@ This is to unify them - as the paths used as keys may be very long of very short
  hashCode calculation not that dependent on input parameters.
  */
 @Component
-class DocumentNameConverter {
+class DocumentIdConverter {
     private final val fileNameToId = ConcurrentHashMap<String, String>()
 
-    fun toId(name: String): String {
-        return fileNameToId.computeIfAbsent(name) { UUID.randomUUID().toString() }
+    fun toId(path: String): String {
+        return fileNameToId.computeIfAbsent(path) { UUID.randomUUID().toString() }
     }
 
-    fun toName(id: String) = fileNameToId[id] ?: throw IllegalStateException("Mapping for id $id is absent")
+    fun toPath(id: String) = fileNameToId[id] ?: throw IllegalStateException("Mapping for id $id is absent")
 }
