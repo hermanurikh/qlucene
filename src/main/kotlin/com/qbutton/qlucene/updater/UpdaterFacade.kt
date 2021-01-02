@@ -31,6 +31,6 @@ class UpdaterFacade @Autowired constructor(
                 .map { UpdateIndexInput(tokenizer.toTerm(it.token), it.operation, fileId, it.count) }
                 .forEach { indexUpdateInfo -> filteredIndices.forEach { it.update(indexUpdateInfo) } }
         }
-        fileFacade.updateContents(fileId, newFile)
+        fileFacade.updateIndexedContents(fileId, newFile)
     }
 }

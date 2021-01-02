@@ -1,6 +1,6 @@
 package com.qbutton.qlucene.fileaccess
 
-import com.qbutton.qlucene.common.DocumentIdConverter
+import com.qbutton.qlucene.common.FileIdConverter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.nio.file.Paths
@@ -10,7 +10,7 @@ import java.nio.file.Paths
  */
 @Component
 class FileFacade @Autowired constructor(
-    private val documentIdConverter: DocumentIdConverter,
+    private val fileIdConverter: FileIdConverter,
     private val inMemoryStorage: InMemoryStorage,
     private val fileSystemStorage: FileSystemStorage
 ) {
@@ -20,11 +20,11 @@ class FileFacade @Autowired constructor(
     }
 
     fun readFromFileSystem(fileId: String): String {
-        val fileName = documentIdConverter.toPath(fileId)
+        val fileName = fileIdConverter.toPath(fileId)
         return Paths.get(fileName).toFile().readText()
     }
 
-    fun updateContents(fileId: String, fileContents: String) {
+    fun updateIndexedContents(fileId: String, fileContents: String) {
         TODO()
     }
 }

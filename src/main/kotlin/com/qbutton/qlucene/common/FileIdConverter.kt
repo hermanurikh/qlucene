@@ -10,7 +10,7 @@ This is to unify them - as the paths used as keys may be very long of very short
  hashCode calculation not that dependent on input parameters.
  */
 @Component
-class DocumentIdConverter {
+class FileIdConverter {
     private final val fileNameToId = ConcurrentHashMap<String, String>()
 
     fun toId(path: String): String {

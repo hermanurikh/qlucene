@@ -20,7 +20,6 @@ class UserAPI @Autowired constructor(
     private val directoryMonitorService: DirectoryMonitorService,
     private val fileMonitorService: FileMonitorService
 ) {
-    // TODO test with non-existent
     fun addToIndex(path: String): RegistrationResult {
         val file = Paths.get(path).toFile()
 
