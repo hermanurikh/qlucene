@@ -16,7 +16,7 @@ class UpdaterFacade @Autowired constructor(
 ) {
     // todo dont forget tests with empty files
     fun update(fileId: String) {
-        // todo we may need a lock on file here not to process same file simultaneously
+        // todo we need a lock on file here not to process same file simultaneously
         // todo how about a quick check if hashes are same and no need to check?
         val oldFile = fileFacade.getLastIndexedContents(fileId)
         val newFile = fileFacade.readFromFileSystem(fileId)

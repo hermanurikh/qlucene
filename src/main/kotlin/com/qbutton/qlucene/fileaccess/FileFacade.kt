@@ -3,6 +3,7 @@ package com.qbutton.qlucene.fileaccess
 import com.qbutton.qlucene.common.FileIdConverter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import java.nio.file.Files
 import java.nio.file.Paths
 
 /**
@@ -21,7 +22,9 @@ class FileFacade @Autowired constructor(
 
     fun readFromFileSystem(fileId: String): String {
         val fileName = fileIdConverter.toPath(fileId)
-        return Paths.get(fileName).toFile().readText()
+        val path = Paths.get(fileName)
+        // empty contents is a valid result since we might have removed the file
+        return if (Files.exists(path)) path.toFile().readText() else ""
     }
 
     fun updateIndexedContents(fileId: String, fileContents: String) {

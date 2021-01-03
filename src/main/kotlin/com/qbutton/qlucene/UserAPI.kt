@@ -5,8 +5,8 @@ import com.qbutton.qlucene.dto.FileNotFoundRegistrationResult
 import com.qbutton.qlucene.dto.RegistrationResult
 import com.qbutton.qlucene.dto.Term
 import com.qbutton.qlucene.searcher.SearchFacade
-import com.qbutton.qlucene.updater.background.DirectoryMonitorService
-import com.qbutton.qlucene.updater.background.FileMonitorService
+import com.qbutton.qlucene.updater.background.DirectoryWatchService
+import com.qbutton.qlucene.updater.background.FileWatchService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.nio.file.Paths
@@ -17,8 +17,8 @@ import java.nio.file.Paths
 @Component
 class UserAPI @Autowired constructor(
     private val searchFacade: SearchFacade,
-    private val directoryMonitorService: DirectoryMonitorService,
-    private val fileMonitorService: FileMonitorService
+    private val directoryMonitorService: DirectoryWatchService,
+    private val fileMonitorService: FileWatchService
 ) {
     fun addToIndex(path: String): RegistrationResult {
         val file = Paths.get(path).toFile()
