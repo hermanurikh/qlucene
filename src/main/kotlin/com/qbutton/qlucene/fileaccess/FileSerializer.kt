@@ -43,24 +43,20 @@ class FileSerializer @Autowired constructor(
     private fun needsCompression(contents: String) = contents.length >= compressionThreshold
 
     private fun compress(contents: String): ByteArray {
-        ByteArrayOutputStream()
-            .use { bos ->
-                GZIPOutputStream(bos)
-                    .use { gzipOutputStream ->
-                        gzipOutputStream.write(contents.toByteArray(charset))
-                        return bos.toByteArray()
-                    }
+        val bos = ByteArrayOutputStream()
+        GZIPOutputStream(bos)
+            .use { gzipOutputStream ->
+                gzipOutputStream.write(contents.toByteArray(charset))
             }
+        return bos.toByteArray()
     }
 
     private fun decompress(contents: ByteArray): String {
-        ByteArrayInputStream(contents)
-            .use { bis ->
-                GZIPInputStream(bis)
-                    .use { gzipInputStream ->
-                        val bytes = gzipInputStream.readAllBytes()
-                        return String(bytes, charset)
-                    }
+        val bis = ByteArrayInputStream(contents)
+        GZIPInputStream(bis)
+            .use { gzipInputStream ->
+                val bytes = gzipInputStream.readAllBytes()
+                return String(bytes, charset)
             }
     }
 }
