@@ -8,57 +8,47 @@ import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * We are saving previously indexed contents either in memory or in file storage (in case we are running out of memory).
- * Contents are compressed using GZip, if they are greater than some threshold.
- *
- * During my tests, compressed contents of english dictionary save 3x space. Compressed code
- * saves much more as tokens repeat more often.
+ * We are saving previously indexed contents either in memory or in file storage.
  */
-abstract class Storage constructor(
-    private val fileCompressor: FileCompressor
-) {
-    fun readFile(fileId: String): String? {
-        val compressedContents = readCompressedFile(fileId)
-        return if (compressedContents != null) fileCompressor.decompress(compressedContents) else null
-    }
+abstract class Storage {
 
-    fun addFile(fileId: String, fileContents: String) {
-        val compressedContents = fileCompressor.compress(fileContents)
-        addCompressedFile(fileId, compressedContents)
-    }
+    abstract fun readFile(fileId: String): ByteArray?
 
-    abstract fun readCompressedFile(fileId: String): ByteArray?
+    abstract fun addFile(fileId: String, fileContents: ByteArray)
 
-    abstract fun addCompressedFile(fileId: String, compressedFileContents: ByteArray)
+    abstract fun hasFile(fileId: String): Boolean
 }
 
 @Component
-class InMemoryStorage @Autowired constructor(
-    fileCompressor: FileCompressor
-) : Storage(fileCompressor) {
+class InMemoryStorage : Storage() {
 
     private val storage = ConcurrentHashMap<String, ByteArray>()
 
-    override fun readCompressedFile(fileId: String) = storage[fileId]
+    override fun readFile(fileId: String) = storage[fileId]
 
-    override fun addCompressedFile(fileId: String, compressedFileContents: ByteArray) {
-        storage[fileId] = compressedFileContents
+    override fun addFile(fileId: String, fileContents: ByteArray) {
+        storage[fileId] = fileContents
     }
+
+    override fun hasFile(fileId: String) = storage.containsKey(fileId)
 }
 
 @Component
 class FileSystemStorage @Autowired constructor(
-    fileCompressor: FileCompressor,
-    @Value("\$indexed-contents.root-dir")
+    @Value("\${indexed-contents.root-dir}")
     private val rootDir: String
-) : Storage(fileCompressor) {
-    override fun readCompressedFile(fileId: String): ByteArray? {
-        val path = getPath(fileId)
-        return if (Files.exists(path)) path.toFile().readBytes() else null
+) : Storage() {
+    override fun readFile(fileId: String): ByteArray? {
+        return if (hasFile(fileId)) getPath(fileId).toFile().readBytes() else null
     }
 
-    override fun addCompressedFile(fileId: String, compressedFileContents: ByteArray) {
-        Files.write(getPath(fileId), compressedFileContents)
+    override fun addFile(fileId: String, fileContents: ByteArray) {
+        Files.write(getPath(fileId), fileContents)
+    }
+
+    override fun hasFile(fileId: String): Boolean {
+        val path = getPath(fileId)
+        return Files.exists(path)
     }
 
     private fun getPath(fileId: String) = Paths.get(rootDir + fileId)

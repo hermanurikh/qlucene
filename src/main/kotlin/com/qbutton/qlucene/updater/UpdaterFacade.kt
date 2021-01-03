@@ -19,7 +19,7 @@ class UpdaterFacade @Autowired constructor(
         // todo we need a lock on file here not to process same file simultaneously
         // todo how about a quick check if hashes are same and no need to check?
         val oldFile = fileFacade.getLastIndexedContents(fileId)
-        val newFile = fileFacade.readFromFileSystem(fileId)
+        val newFile = fileFacade.readRawTextFromFileSystem(fileId)
         // loading files up to 10MB (which was a top limit in requirements) and comparing the tokens looks almost instant (< 1 second)
         for (tokenizer in tokenizers) {
             val oldTokens = tokenizer.tokenize(oldFile)
