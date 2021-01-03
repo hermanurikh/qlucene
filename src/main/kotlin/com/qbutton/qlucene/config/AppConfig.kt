@@ -8,7 +8,6 @@ import org.springframework.context.event.SimpleApplicationEventMulticaster
 import org.springframework.core.task.SimpleAsyncTaskExecutor
 import java.nio.file.FileSystems
 
-
 @Configuration
 @PropertySource("classpath:search.properties")
 class AppConfig {

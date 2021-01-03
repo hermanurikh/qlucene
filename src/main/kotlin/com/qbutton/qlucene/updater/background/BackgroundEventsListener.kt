@@ -14,18 +14,18 @@ import java.nio.file.StandardWatchEventKinds.ENTRY_DELETE
 import java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY
 import java.nio.file.StandardWatchEventKinds.OVERFLOW
 
+/**
+ * Asynchronously (see AppConfig.java) listens to events emitted by files or directories changed and takes corresponding actions.
+ */
 @Component
-class ListenerService @Autowired constructor(
+class BackgroundEventsListener @Autowired constructor(
     private val updaterFacade: UpdaterFacade,
     private val fileIdConverter: FileIdConverter,
     private val userAPI: UserAPI
 ) {
 
-    private val logger = LoggerFactory.getLogger(ListenerService::class.java)!!
+    private val logger = LoggerFactory.getLogger(BackgroundEventsListener::class.java)!!
 
-    /**
-     * Listens to events emitted by files or directories changed and takes corresponding actions.
-     */
     @EventListener
     fun listen(fileChangedEvent: FileChangedEvent) {
         for (event in fileChangedEvent.events) {
@@ -35,7 +35,7 @@ class ListenerService @Autowired constructor(
                 continue
             }
 
-            //suppressing - it is like that even in official Oracle documentation :|
+            // suppressing - it is like that even in official Oracle documentation :|
             @Suppress("UNCHECKED_CAST")
             val changedEntryName = event.context()
             val resolvedEntry = fileChangedEvent.monitoredFile.resolve(changedEntryName)
@@ -43,7 +43,7 @@ class ListenerService @Autowired constructor(
 
             when (kind) {
                 ENTRY_CREATE -> {
-                    //for directory or file, register it
+                    // for directory or file, register it
                     userAPI.addToIndex(resolvedEntry.toString())
                 }
                 ENTRY_MODIFY -> {
@@ -60,7 +60,6 @@ class ListenerService @Autowired constructor(
                         updaterFacade.update(resolvedEntry.toString())
                     }
                     // TODO("for directory, we need to walk file tree")
-
                 }
             }
         }
