@@ -20,9 +20,9 @@ class DiffCalculator {
             .parallelStream()
             .map {
                 when (it.type!!) {
-                    DIFF_TYPE.INSERT -> listOf(toCreateResult(it.revised.lines))
-                    Delta.TYPE.CHANGE -> listOf(toDeleteResult(it.original.lines), toCreateResult(it.revised.lines))
-                    Delta.TYPE.DELETE -> listOf(toDeleteResult(it.original.lines))
+                    DIFF_TYPE.INSERT -> toCreateResult(it.revised.lines)
+                    Delta.TYPE.CHANGE -> toDeleteResult(it.original.lines) + toCreateResult(it.revised.lines)
+                    Delta.TYPE.DELETE -> toDeleteResult(it.original.lines)
                 }
             }
             .flatMap { it.stream() }
@@ -47,6 +47,10 @@ class DiffCalculator {
             DiffCalculationResult(token, second.operation, second.count - first.count)
     }
 
-    private fun toCreateResult(rawLines: List<String>) = DiffCalculationResult(rawLines.joinToString(), Operation.CREATE, 1)
-    private fun toDeleteResult(rawLines: List<String>) = DiffCalculationResult(rawLines.joinToString(), Operation.DELETE, 1)
+    private fun toCreateResult(rawLines: List<String>) = toDiffCalculationResult(rawLines, Operation.CREATE)
+    private fun toDeleteResult(rawLines: List<String>) = toDiffCalculationResult(rawLines, Operation.DELETE)
+
+    private fun toDiffCalculationResult(rawLines: List<String>, operation: Operation) =
+        rawLines.map { DiffCalculationResult(it, operation, 1) }
+            .toMutableList()
 }
