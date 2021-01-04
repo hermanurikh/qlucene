@@ -3,7 +3,7 @@ package com.qbutton.qlucene.updater.background
 import com.qbutton.qlucene.UserAPI
 import com.qbutton.qlucene.common.FileIdConverter
 import com.qbutton.qlucene.dto.FileChangedEvent
-import com.qbutton.qlucene.updater.UpdaterFacade
+import com.qbutton.qlucene.updater.FileUpdaterFacade
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.event.EventListener
@@ -19,7 +19,7 @@ import java.nio.file.StandardWatchEventKinds.OVERFLOW
  */
 @Component
 class BackgroundEventsListener @Autowired constructor(
-    private val updaterFacade: UpdaterFacade,
+    private val fileUpdaterFacade: FileUpdaterFacade,
     private val fileIdConverter: FileIdConverter,
     private val userAPI: UserAPI
 ) {
@@ -49,7 +49,7 @@ class BackgroundEventsListener @Autowired constructor(
                 ENTRY_MODIFY -> {
                     // for file, update it
                     if (Files.isRegularFile(resolvedEntry)) {
-                        updaterFacade.update(resolvedEntry.toString())
+                        fileUpdaterFacade.update(resolvedEntry.toString())
                     }
                     // for directory, do nothing -> adding/removing file will trigger other 2 events
                     // TODO validate this theory
@@ -57,7 +57,7 @@ class BackgroundEventsListener @Autowired constructor(
                 ENTRY_DELETE -> {
                     // for file, update it to empty contents
                     if (Files.isRegularFile(resolvedEntry)) {
-                        updaterFacade.update(resolvedEntry.toString())
+                        fileUpdaterFacade.update(resolvedEntry.toString())
                     }
                     // TODO("for directory, we need to walk file tree")
                 }

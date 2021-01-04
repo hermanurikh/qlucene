@@ -11,7 +11,7 @@ import java.nio.file.Paths
  * An API class for working with indexed files.
  */
 @Component
-class FileFacade @Autowired constructor(
+class FileStorageFacade @Autowired constructor(
     private val fileIdConverter: FileIdConverter,
     private val inMemoryStorage: InMemoryStorage,
     private val fileSystemStorage: FileSystemStorage,

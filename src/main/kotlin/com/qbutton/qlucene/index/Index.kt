@@ -11,7 +11,10 @@ abstract class Index : Executable {
     private val storage = ConcurrentHashMap<Term, ConcurrentHashMap<String, Int>>()
 
     // TODO think about ignoring case
-    // TODO think about size of the index whether it will always fit in memory
+    /**
+     * Searches for given term. Currently index is stored entirely in memory, we could expand it and save it on file
+     * system as well (as it is done in FileFacade.kt for previously indexed contents).
+     */
     fun find(term: Term): Set<DocumentSearchResult> {
         return storage[term]
             ?.entries

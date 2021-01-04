@@ -38,6 +38,7 @@ class DirectoryWatchService @Autowired constructor(
 
         backgroundEventsPublisher.attachWatcher(path)
         if (recursive) {
+            // todo replace with https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.io/-file-tree-walk/
             val fileTreeWalker = FileTreeWalker(fileMonitorService, this)
             Files.walkFileTree(Paths.get(path), emptySet(), maxDepth, fileTreeWalker)
         }
