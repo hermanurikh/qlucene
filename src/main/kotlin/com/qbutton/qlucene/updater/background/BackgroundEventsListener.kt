@@ -12,7 +12,6 @@ import java.nio.file.Files
 import java.nio.file.StandardWatchEventKinds.ENTRY_CREATE
 import java.nio.file.StandardWatchEventKinds.ENTRY_DELETE
 import java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY
-import java.nio.file.StandardWatchEventKinds.OVERFLOW
 
 /**
  * Asynchronously (see AppConfig.java) listens to events emitted by files or directories changed and takes corresponding actions.
@@ -30,10 +29,6 @@ class BackgroundEventsListener @Autowired constructor(
     fun listen(fileChangedEvent: FileChangedEvent) {
         for (event in fileChangedEvent.events) {
             val kind = event.kind()
-            if (kind === OVERFLOW) {
-                logger.error("Overflow event $event received for file ${fileChangedEvent.monitoredFile}")
-                continue
-            }
 
             // suppressing - it is like that even in official Oracle documentation :|
             @Suppress("UNCHECKED_CAST")

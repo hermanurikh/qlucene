@@ -10,7 +10,6 @@ import java.nio.file.Paths
 import java.nio.file.StandardWatchEventKinds.ENTRY_CREATE
 import java.nio.file.StandardWatchEventKinds.ENTRY_DELETE
 import java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY
-import java.nio.file.StandardWatchEventKinds.OVERFLOW
 import java.nio.file.WatchEvent
 import java.nio.file.WatchKey
 import java.nio.file.WatchService
@@ -33,7 +32,7 @@ class BackgroundEventsPublisher @Autowired constructor(
 
     fun attachWatcher(path: String) {
         val dir = Paths.get(path)
-        val key = dir.register(jdkWatchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY, OVERFLOW)
+        val key = dir.register(jdkWatchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
         keyMap[key] = dir
     }
 
