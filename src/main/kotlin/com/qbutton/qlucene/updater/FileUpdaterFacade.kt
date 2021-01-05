@@ -23,6 +23,7 @@ class FileUpdaterFacade @Autowired constructor(
 
     // todo dont forget tests with empty files
     fun update(fileId: String) {
+        logger.info("updating file $fileId")
         // todo how about a quick check if hashes are same and no need to check?
         val lock = locks.computeIfAbsent(fileId) { ReentrantLock() }
         val oldFile: String

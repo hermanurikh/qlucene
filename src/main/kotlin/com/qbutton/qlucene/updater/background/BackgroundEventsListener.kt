@@ -34,24 +34,28 @@ class BackgroundEventsListener @Autowired constructor(
             @Suppress("UNCHECKED_CAST")
             val changedEntryName = event.context()
             val resolvedEntry = directoryChangedEvent.monitoredDir.resolve(changedEntryName)
-            val entryId = fileIdConverter.toId(resolvedEntry.toString())
+            val path = resolvedEntry.toString()
+            val entryId = fileIdConverter.toId(path)
 
             when (kind) {
                 ENTRY_CREATE -> {
                     // for directory or file, register it
-                    userAPI.addToIndex(resolvedEntry.toString())
+                    logger.info("CREATE event detected for $path")
+                    userAPI.addToIndex(path)
                 }
                 ENTRY_MODIFY -> {
                     // for file, update it
                     if (Files.isRegularFile(resolvedEntry)) {
-                        fileUpdaterFacade.update(resolvedEntry.toString())
+                        logger.info("MODIFY event detected for $path")
+                        fileUpdaterFacade.update(entryId)
                     }
                     // for directory, do nothing -> adding/removing file will trigger other 2 events
                 }
                 ENTRY_DELETE -> {
+                    logger.info("DELETE event detected for $path")
                     // for file, update it to empty contents
-                    if (Files.isRegularFile(resolvedEntry)) {
-                        fileUpdaterFacade.update(resolvedEntry.toString())
+                    if (!Files.isDirectory(resolvedEntry)) {
+                        fileUpdaterFacade.update(entryId)
                     }
                     // TODO("for directory, we need to walk file tree")
                 }
