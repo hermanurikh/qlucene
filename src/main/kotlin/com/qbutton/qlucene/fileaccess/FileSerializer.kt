@@ -1,5 +1,6 @@
 package com.qbutton.qlucene.fileaccess
 
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -23,6 +24,7 @@ class FileSerializer @Autowired constructor(
 ) {
     private val charset = StandardCharsets.UTF_8
     private val compressionMapping = ConcurrentHashMap<String, Boolean>()
+    private val logger = LoggerFactory.getLogger(FileSerializer::class.java)
 
     fun toBytes(fileId: String, contents: String): ByteArray {
         var needsCompression = needsCompression(contents)
@@ -31,12 +33,17 @@ class FileSerializer @Autowired constructor(
             needsCompression = prevMapping
         }
 
+        logger.info("serializing file $fileId, compressed: $needsCompression")
+
         return if (needsCompression) compress(contents) else contents.toByteArray(charset)
     }
 
     fun toString(fileId: String, contents: ByteArray): String {
         val needsDecompression = compressionMapping[fileId]
             ?: throw IllegalStateException("No info about compression found for $fileId")
+
+        logger.info("de-serializing file $fileId, to be decompressed: $needsDecompression")
+
         return if (needsDecompression) decompress(contents) else String(contents, charset)
     }
 

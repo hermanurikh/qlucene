@@ -7,10 +7,18 @@ import com.qbutton.qlucene.updater.tokenizer.Tokenizer
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import org.springframework.util.DigestUtils
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
 
+/**
+ * A facade to perform file update operation:
+ *      1. get last indexed contents
+ *      2. get current contents
+ *      3. calculate difference and feed it to indices
+ *      4. update last indexed contents
+ */
 @Component
 class FileUpdaterFacade @Autowired constructor(
     private val diffCalculator: DiffCalculator,
@@ -21,10 +29,9 @@ class FileUpdaterFacade @Autowired constructor(
     private val locks = ConcurrentHashMap<String, Lock>()
     private val logger = LoggerFactory.getLogger(FileUpdaterFacade::class.java)
 
-    // todo dont forget tests with empty files
     fun update(fileId: String) {
         logger.info("updating file $fileId")
-        // todo how about a quick check if hashes are same and no need to check?
+
         val lock = locks.computeIfAbsent(fileId) { ReentrantLock() }
         val oldFile: String
         val newFile: String
@@ -33,6 +40,12 @@ class FileUpdaterFacade @Autowired constructor(
             lock.lock()
             oldFile = fileStorageFacade.getLastIndexedContents(fileId)
             newFile = fileStorageFacade.readRawTextFromFileSystem(fileId)
+
+            if (hashesAreEqual(oldFile, newFile)) {
+                logger.info("file $fileId contents look identical, skipping updates")
+                return
+            }
+
             fileStorageFacade.updateIndexedContents(fileId, newFile)
         } finally {
             /* no need to hold lock any more, we've updated the cached contents and have the diff,
@@ -54,5 +67,12 @@ class FileUpdaterFacade @Autowired constructor(
                 .forEach { indexUpdateInfo -> filteredIndices.forEach { it.update(indexUpdateInfo) } }
             logger.info("finished updating index for tokenizer $tokenizer")
         }
+    }
+
+    private fun hashesAreEqual(oldFile: String, newFile: String): Boolean {
+        val oldFileHash = DigestUtils.md5Digest(oldFile.toByteArray())
+        val newFileHash = DigestUtils.md5Digest(newFile.toByteArray())
+
+        return oldFileHash.contentEquals(newFileHash)
     }
 }

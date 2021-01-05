@@ -104,7 +104,6 @@ class WatchService @Autowired constructor(
     fun registerRootDir(path: String): RegistrationResult {
         val result = registerDir(path, true)
         if (result !is DirectoryAlreadyRegistered) {
-            // todo replace with https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.io/-file-tree-walk/ ?
             val fileTreeWalker = FileTreeWalker(this, path)
             Files.walkFileTree(Paths.get(path), emptySet(), maxDepth, fileTreeWalker)
         }

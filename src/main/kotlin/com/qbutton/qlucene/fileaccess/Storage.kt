@@ -26,10 +26,15 @@ abstract class Storage {
 class InMemoryStorage : Storage() {
 
     private val storage = ConcurrentHashMap<String, ByteArray>()
+    private val logger = LoggerFactory.getLogger(InMemoryStorage::class.java)
 
-    override fun readFile(fileId: String) = storage[fileId]
+    override fun readFile(fileId: String): ByteArray? {
+        logger.info("reading file $fileId from in-memory storage")
+        return storage[fileId]
+    }
 
     override fun addFile(fileId: String, fileContents: ByteArray) {
+        logger.info("adding file $fileId to in-memory storage")
         storage[fileId] = fileContents
     }
 
@@ -66,10 +71,12 @@ class FileSystemStorage @Autowired constructor(
     }
 
     override fun readFile(fileId: String): ByteArray? {
+        logger.info("reading file $fileId from file system")
         return if (hasFile(fileId)) getPath(fileId).toFile().readBytes() else null
     }
 
     override fun addFile(fileId: String, fileContents: ByteArray) {
+        logger.info("adding file $fileId to file system storage")
         Files.write(getPath(fileId), fileContents)
     }
 

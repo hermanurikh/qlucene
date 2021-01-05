@@ -37,6 +37,11 @@ class BackgroundEventsListener @Autowired constructor(
             val path = resolvedEntry.toString()
             val entryId = fileIdConverter.toId(path)
 
+            if (shouldFilterOut(path, directoryChangedEvent)) {
+                logger.info("path $path is not monitored, skipping event $kind")
+                continue
+            }
+
             when (kind) {
                 ENTRY_CREATE -> {
                     // for directory or file, register it
@@ -57,9 +62,17 @@ class BackgroundEventsListener @Autowired constructor(
                     if (!Files.isDirectory(resolvedEntry)) {
                         fileUpdaterFacade.update(entryId)
                     }
-                    // TODO("for directory, we need to walk file tree")
+                    // TODO("for directory, we need to walk file tree. Check above doesn't work as file is not there")
                 }
             }
         }
+    }
+
+    /**
+     * Filters out events. Sometimes we monitor only specific files in given dir, meaning that events corresponding
+     * to other files should be skipped.
+     */
+    private fun shouldFilterOut(path: String, directoryChangedEvent: DirectoryChangedEvent): Boolean {
+        return directoryChangedEvent.filteredFiles != null && !directoryChangedEvent.filteredFiles.contains(path)
     }
 }
