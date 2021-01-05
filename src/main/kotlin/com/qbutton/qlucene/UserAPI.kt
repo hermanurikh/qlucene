@@ -3,37 +3,58 @@ package com.qbutton.qlucene
 import com.qbutton.qlucene.dto.AbnormalFileRegistrationResult
 import com.qbutton.qlucene.dto.FileNotFoundRegistrationResult
 import com.qbutton.qlucene.dto.RegistrationResult
-import com.qbutton.qlucene.dto.Term
+import com.qbutton.qlucene.dto.Sentence
+import com.qbutton.qlucene.dto.Word
 import com.qbutton.qlucene.searcher.SearchFacade
-import com.qbutton.qlucene.updater.background.DirectoryWatchService
-import com.qbutton.qlucene.updater.background.FileWatchService
+import com.qbutton.qlucene.updater.background.WatchService
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.stereotype.Component
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import java.nio.file.Paths
 
 /**
  * A class exposing all API via which a user interacts with application.
+ *
+ * A super-plain rest controller with methods and examples to hit them using curl.
  */
-@Component
+@RestController
 class UserAPI @Autowired constructor(
     private val searchFacade: SearchFacade,
-    private val directoryMonitorService: DirectoryWatchService,
-    private val fileMonitorService: FileWatchService
+    private val watchService: WatchService
 ) {
-    fun addToIndex(path: String): RegistrationResult {
+    /**
+     * E.g.
+     * curl --data "path=/Users/gurikh/code/qlucene/src/test/resources/files/simpleFile1.txt" http://localhost:8087/add/
+     */
+    @PostMapping("/add/")
+    fun addToIndex(@RequestParam path: String): RegistrationResult {
         val file = Paths.get(path).toFile()
 
         return when {
             !file.exists() -> FileNotFoundRegistrationResult(path)
             file.isDirectory -> {
-                directoryMonitorService.register(path)
+                watchService.registerRootDir(path)
             }
             file.isFile -> {
-                fileMonitorService.register(path)
+                watchService.registerFile(path)
             }
             else -> AbnormalFileRegistrationResult(path)
         }
     }
 
-    fun search(term: Term) = searchFacade.search(term)
+    /**
+     * E.g.
+     * curl -i http://localhost:8077/search/word/one
+     */
+    @GetMapping("/search/word/{token}")
+    fun searchWord(@PathVariable token: String) = searchFacade.search(Word(token))
+    /**
+     * E.g.
+     * curl -i http://localhost:8077/search/sentence/test
+     */
+    @GetMapping("/search/sentence/{token}")
+    fun searchSentence(@PathVariable token: String) = searchFacade.search(Sentence(token))
 }

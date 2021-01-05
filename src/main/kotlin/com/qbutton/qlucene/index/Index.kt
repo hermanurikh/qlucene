@@ -7,13 +7,20 @@ import com.qbutton.qlucene.dto.Term
 import com.qbutton.qlucene.dto.UpdateIndexInput
 import java.util.concurrent.ConcurrentHashMap
 
+/**
+ * Base class for Index.
+ *
+ * Index is eventually consistent, it has no guarantees of changes done to files being immediately visible.
+ *
+ * Currently index is stored entirely in memory, we could expand it and save it on file
+ * system as well (as it is done in FileFacade.kt for previously indexed contents). Or use some 3rd party storage
+ * which provides in-memory or filesystem dispatching out-of-the-box.
+ */
 abstract class Index : Executable {
     private val storage = ConcurrentHashMap<Term, ConcurrentHashMap<String, Int>>()
 
-    // TODO think about ignoring case
     /**
-     * Searches for given term. Currently index is stored entirely in memory, we could expand it and save it on file
-     * system as well (as it is done in FileFacade.kt for previously indexed contents).
+     * Searches for given term.
      */
     fun find(term: Term): Set<DocumentSearchResult> {
         return storage[term]

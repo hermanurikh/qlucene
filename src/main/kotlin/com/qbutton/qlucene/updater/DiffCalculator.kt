@@ -2,55 +2,45 @@ package com.qbutton.qlucene.updater
 
 import com.qbutton.qlucene.dto.DiffCalculationResult
 import com.qbutton.qlucene.dto.Operation
-import difflib.Delta
-import difflib.DiffUtils
 import org.springframework.stereotype.Component
-import java.util.stream.Collectors
-import difflib.Delta.TYPE as DIFF_TYPE
 
+/**
+ * A class responsible for getting diffs between old tokens list and new tokens list.
+ *
+ * Originally I used a 3rd party com.googlecode.java-diff-utils:diffutils for it. Turned out, it has O(n^2) complexity,
+ * because it calculates the positions in which things are changed, and it blew up on big files. I don't need the positions,
+ * so I can use a simpler algo to find the diff in O(n).
+ */
 @Component
 class DiffCalculator {
     fun getDiff(oldTokens: List<String>, newTokens: List<String>): List<DiffCalculationResult> {
-        val patch = DiffUtils.diff(oldTokens, newTokens)
 
-        // we can do a proper map-reduce in the future, for now using the built-in functions for simplicity
+        val diffCalculationResults = mutableListOf<DiffCalculationResult>()
 
-        // map by same token
-        val operationsByToken = patch.deltas
-            .parallelStream()
-            .map {
-                when (it.type!!) {
-                    DIFF_TYPE.INSERT -> toCreateResult(it.revised.lines)
-                    Delta.TYPE.CHANGE -> toDeleteResult(it.original.lines) + toCreateResult(it.revised.lines)
-                    Delta.TYPE.DELETE -> toDeleteResult(it.original.lines)
+        val oldTokensGrouped = oldTokens.groupingBy { it }.eachCount().toMutableMap()
+        val newTokensGrouped = newTokens.groupingBy { it }.eachCount().toMutableMap()
+
+        oldTokensGrouped.forEach { (token, count) ->
+            val updatedTokenCount = newTokensGrouped[token] ?: 0
+            when {
+                count > updatedTokenCount -> {
+                    // some deletions happened
+                    diffCalculationResults.add(DiffCalculationResult(token, Operation.DELETE, count - updatedTokenCount))
+                }
+                count < updatedTokenCount -> {
+                    // some additions happened
+                    diffCalculationResults.add(DiffCalculationResult(token, Operation.CREATE, updatedTokenCount - count))
                 }
             }
-            .flatMap { it.stream() }
-            .collect(Collectors.groupingBy { it.token })
 
-        // reduce
-        return operationsByToken.values
-            .parallelStream()
-            .map { it.reduce(this::reducePair) }
-            .filter { it.count > 0 }
-            .collect(Collectors.toList())
-    }
-
-    private fun reducePair(first: DiffCalculationResult, second: DiffCalculationResult): DiffCalculationResult {
-        val token = first.token
-        if (first.operation == second.operation) {
-            return DiffCalculationResult(token, first.operation, first.count + second.count)
+            newTokensGrouped.remove(token)
         }
-        return if (first.count >= second.count)
-            DiffCalculationResult(token, first.operation, first.count - second.count)
-        else
-            DiffCalculationResult(token, second.operation, second.count - first.count)
+
+        // check tokens which are still in newTokens map -> these were added
+        diffCalculationResults.addAll(
+            newTokensGrouped.map { DiffCalculationResult(it.key, Operation.CREATE, it.value) }
+        )
+
+        return diffCalculationResults
     }
-
-    private fun toCreateResult(rawLines: List<String>) = toDiffCalculationResult(rawLines, Operation.CREATE)
-    private fun toDeleteResult(rawLines: List<String>) = toDiffCalculationResult(rawLines, Operation.DELETE)
-
-    private fun toDiffCalculationResult(rawLines: List<String>, operation: Operation) =
-        rawLines.map { DiffCalculationResult(it, operation, 1) }
-            .toMutableList()
 }

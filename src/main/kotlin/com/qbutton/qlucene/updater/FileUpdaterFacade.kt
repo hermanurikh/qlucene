@@ -4,6 +4,7 @@ import com.qbutton.qlucene.dto.UpdateIndexInput
 import com.qbutton.qlucene.fileaccess.FileStorageFacade
 import com.qbutton.qlucene.index.Index
 import com.qbutton.qlucene.updater.tokenizer.Tokenizer
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
@@ -18,6 +19,7 @@ class FileUpdaterFacade @Autowired constructor(
     private val fileStorageFacade: FileStorageFacade
 ) {
     private val locks = ConcurrentHashMap<String, Lock>()
+    private val logger = LoggerFactory.getLogger(FileUpdaterFacade::class.java)
 
     // todo dont forget tests with empty files
     fun update(fileId: String) {
@@ -39,14 +41,17 @@ class FileUpdaterFacade @Autowired constructor(
         }
         // loading files up to 10MB (which was a top limit in requirements) and comparing the tokens looks almost instant (< 1 second)
         for (tokenizer in tokenizers) {
+            logger.info("tokenizing with $tokenizer")
             val oldTokens = tokenizer.tokenize(oldFile)
             val newTokens = tokenizer.tokenize(newFile)
             val diff = diffCalculator.getDiff(oldTokens, newTokens)
+            logger.info("diff calculated for file $fileId")
             val filteredIndices = indices.filter { it.canExecute(tokenizer.getProducedTermClass()) }
 
             diff.parallelStream()
                 .map { UpdateIndexInput(tokenizer.toTerm(it.token), it.operation, fileId, it.count) }
                 .forEach { indexUpdateInfo -> filteredIndices.forEach { it.update(indexUpdateInfo) } }
+            logger.info("finished updating index for tokenizer $tokenizer")
         }
     }
 }

@@ -1,6 +1,6 @@
 package com.qbutton.qlucene.updater.background
 
-import com.qbutton.qlucene.dto.FileChangedEvent
+import com.qbutton.qlucene.dto.DirectoryChangedEvent
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationEventPublisher
@@ -13,6 +13,7 @@ import java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY
 import java.nio.file.WatchEvent
 import java.nio.file.WatchKey
 import java.nio.file.WatchService
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
@@ -23,7 +24,9 @@ class BackgroundEventsPublisher @Autowired constructor(
     private val applicationEventPublisher: ApplicationEventPublisher
 ) {
 
-    private val keyMap = HashMap<WatchKey, Path>()
+    private val keyMap = ConcurrentHashMap<WatchKey, Path>()
+    // if there is an entry in dirToFilteredFiles and set is not empty, we should be interested only in those files which are in the set
+    private val dirToFilteredFiles = ConcurrentHashMap<String, MutableSet<String>>()
     // we are fine to process updates in single thread since it will be just adding events to spring event bus
     private val executorService = Executors.newSingleThreadExecutor()
     @Volatile private var processEvents = true
@@ -34,6 +37,15 @@ class BackgroundEventsPublisher @Autowired constructor(
         val dir = Paths.get(path)
         val key = dir.register(jdkWatchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
         keyMap[key] = dir
+    }
+
+    fun updateFilteredFiles(path: String, filteredFile: String) {
+        val filteredFiles = dirToFilteredFiles.computeIfAbsent(path) { HashSet() }
+        filteredFiles.add(filteredFile)
+    }
+
+    fun clearFilteredFiles(path: String) {
+        dirToFilteredFiles.remove(path)
     }
 
     /**
@@ -53,7 +65,7 @@ class BackgroundEventsPublisher @Autowired constructor(
                     continue
                 }
                 @Suppress("UNCHECKED_CAST")
-                val event = FileChangedEvent(dir, key.pollEvents() as List<WatchEvent<Path>>)
+                val event = DirectoryChangedEvent(dir, key.pollEvents() as List<WatchEvent<Path>>, dirToFilteredFiles[dir.toString()])
                 applicationEventPublisher.publishEvent(event)
 
                 // reset key and remove from set if directory no longer accessible

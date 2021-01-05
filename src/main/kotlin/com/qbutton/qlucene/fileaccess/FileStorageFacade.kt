@@ -1,6 +1,7 @@
 package com.qbutton.qlucene.fileaccess
 
 import com.qbutton.qlucene.common.FileIdConverter
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -19,6 +20,8 @@ class FileStorageFacade @Autowired constructor(
     @Value("\${indexed-contents.filesystem.threshold}")
     private val minLengthToSaveToFilesystem: Int
 ) {
+    private val logger = LoggerFactory.getLogger(FileStorageFacade::class.java)
+
     fun getLastIndexedContents(fileId: String): String {
         // empty contents is a valid result, if we haven't indexed this file before (e.g. we are just adding it)
         val bytes = inMemoryStorage.readFile(fileId) ?: fileSystemStorage.readFile(fileId)
@@ -37,8 +40,10 @@ class FileStorageFacade @Autowired constructor(
      */
     fun updateIndexedContents(fileId: String, fileContents: String) {
         val storage = if (shouldSaveInFileSystem(fileId, fileContents)) fileSystemStorage else inMemoryStorage
+        logger.info("saving indexed contents for file $fileId")
         val bytes = fileSerializer.toBytes(fileId, fileContents)
         storage.addFile(fileId, bytes)
+        logger.info("successfully updated indexed contents for file $fileId")
     }
 
     private fun shouldSaveInFileSystem(fileId: String, fileContents: String): Boolean {

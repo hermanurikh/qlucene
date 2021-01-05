@@ -13,7 +13,7 @@ import java.nio.file.FileSystems
 class AppConfig {
 
     @Bean
-    fun watchService() = FileSystems.getDefault().newWatchService()!!
+    fun jdkWatchService() = FileSystems.getDefault().newWatchService()!!
 
     /**
      * This bean ensures spring processes events in async manner.

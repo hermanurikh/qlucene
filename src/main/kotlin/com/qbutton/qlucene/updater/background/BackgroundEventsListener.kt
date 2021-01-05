@@ -2,7 +2,7 @@ package com.qbutton.qlucene.updater.background
 
 import com.qbutton.qlucene.UserAPI
 import com.qbutton.qlucene.common.FileIdConverter
-import com.qbutton.qlucene.dto.FileChangedEvent
+import com.qbutton.qlucene.dto.DirectoryChangedEvent
 import com.qbutton.qlucene.updater.FileUpdaterFacade
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -26,14 +26,14 @@ class BackgroundEventsListener @Autowired constructor(
     private val logger = LoggerFactory.getLogger(BackgroundEventsListener::class.java)!!
 
     @EventListener
-    fun listen(fileChangedEvent: FileChangedEvent) {
-        for (event in fileChangedEvent.events) {
+    fun listen(directoryChangedEvent: DirectoryChangedEvent) {
+        for (event in directoryChangedEvent.events) {
             val kind = event.kind()
 
             // suppressing - it is like that even in official Oracle documentation :|
             @Suppress("UNCHECKED_CAST")
             val changedEntryName = event.context()
-            val resolvedEntry = fileChangedEvent.monitoredFile.resolve(changedEntryName)
+            val resolvedEntry = directoryChangedEvent.monitoredDir.resolve(changedEntryName)
             val entryId = fileIdConverter.toId(resolvedEntry.toString())
 
             when (kind) {
@@ -47,7 +47,6 @@ class BackgroundEventsListener @Autowired constructor(
                         fileUpdaterFacade.update(resolvedEntry.toString())
                     }
                     // for directory, do nothing -> adding/removing file will trigger other 2 events
-                    // TODO validate this theory
                 }
                 ENTRY_DELETE -> {
                     // for file, update it to empty contents

@@ -165,15 +165,16 @@ internal class DiffCalculatorTest {
     fun `getDiff should work with complex case`() {
         // given
         val oldTokens = listOf("1", "2", "3", "4", "5")
-        val newTokens = listOf("0", "1", "4", "3", "4", "5", "0", "4", "2")
+        val newTokens = listOf("0", "1", "4", "3", "4", "5", "0", "4", "2", "1")
 
         // when
         val diff = diffCalculator.getDiff(oldTokens, newTokens)
 
         // then
-        assertEquals(2, diff.size)
+        assertEquals(3, diff.size)
         val diff1 = DiffCalculationResult("0", Operation.CREATE, 2)
         val diff2 = DiffCalculationResult("4", Operation.CREATE, 2)
-        assertTrue(diff.containsAll(listOf(diff1, diff2)))
+        val diff3 = DiffCalculationResult("1", Operation.CREATE, 1)
+        assertTrue(diff.containsAll(listOf(diff1, diff2, diff3)))
     }
 }
