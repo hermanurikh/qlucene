@@ -2,6 +2,7 @@ package com.qbutton.qlucene.updater
 
 import com.qbutton.qlucene.dto.DiffCalculationResult
 import com.qbutton.qlucene.dto.Operation
+import com.qbutton.qlucene.dto.Term
 import org.springframework.stereotype.Component
 
 /**
@@ -13,7 +14,7 @@ import org.springframework.stereotype.Component
  */
 @Component
 class DiffCalculator {
-    fun getDiff(oldTokens: List<String>, newTokens: List<String>): List<DiffCalculationResult> {
+    fun getDiff(oldTokens: List<Term>, newTokens: List<Term>): List<DiffCalculationResult> {
 
         val diffCalculationResults = mutableListOf<DiffCalculationResult>()
 

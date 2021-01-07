@@ -1,6 +1,7 @@
 package com.qbutton.qlucene.updater.tokenizer
 
 import com.qbutton.qlucene.dto.Sentence
+import com.qbutton.qlucene.dto.Term
 import com.qbutton.qlucene.dto.Word
 import org.springframework.stereotype.Component
 import java.text.BreakIterator
@@ -10,17 +11,17 @@ A tokenizer which will break text based on Java's {@code BreakIterator}.
  */
 abstract class BreakIteratorTokenizer : Tokenizer() {
 
-    override fun tokenize(rawText: String): List<String> {
+    override fun tokenize(rawText: String): List<Term> {
         val iterator = getBreakIterator()
         iterator.setText(rawText)
-        val words = mutableListOf<String>()
+        val words = mutableListOf<Term>()
         var start = iterator.first()
 
         var end = iterator.next()
         while (end != BreakIterator.DONE) {
             val element = rawText.substring(start, end).trim()
             if (element.isNotBlank() && Character.isLetter(element.codePointAt(0))) {
-                words.add(element)
+                words.add(toTerm(element))
             }
             start = end
             end = iterator.next()
@@ -29,6 +30,8 @@ abstract class BreakIteratorTokenizer : Tokenizer() {
     }
 
     abstract fun getBreakIterator(): BreakIterator
+
+    abstract fun toTerm(rawToken: String): Term
 }
 
 @Component

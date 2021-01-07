@@ -7,9 +7,7 @@ abstract class Tokenizer {
     /**
      * Splits raw text into a list of tokens.
      */
-    abstract fun tokenize(rawText: String): List<String>
-
-    abstract fun toTerm(rawToken: String): Term
+    abstract fun tokenize(rawText: String): List<Term>
 
     abstract fun getProducedTermClass(): KClass<out Term>
 }

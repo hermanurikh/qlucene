@@ -63,7 +63,7 @@ class FileUpdaterFacade @Autowired constructor(
             val filteredIndices = indices.filter { it.canExecute(tokenizer.getProducedTermClass()) }
 
             diff.parallelStream()
-                .map { UpdateIndexInput(tokenizer.toTerm(it.token), it.operation, fileId, it.count) }
+                .map { UpdateIndexInput(it.token, it.operation, fileId, it.count) }
                 .forEach { indexUpdateInfo -> filteredIndices.forEach { it.update(indexUpdateInfo) } }
             logger.info("finished updating index for tokenizer $tokenizer")
         }
