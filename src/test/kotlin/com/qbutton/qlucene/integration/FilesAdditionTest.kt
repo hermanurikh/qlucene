@@ -9,9 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 
 @SpringBootTest
-class UserAPITest {
+class FilesAdditionTest {
 
-    @Autowired private lateinit var userAPI: UserAPI
+    @Autowired
+    private lateinit var userAPI: UserAPI
 
     @BeforeEach
     fun clearState() {
@@ -21,7 +22,7 @@ class UserAPITest {
     @Test
     fun `file should be searchable after it is added directly`() {
         // given
-        val filePath = "src/test/resources/level1dir_1/level2dir_1/simpleFile2.txt"
+        val filePath = nestedFile
         var filesFound = userAPI.searchWord("august")
         assertTrue(filesFound.isEmpty())
 
@@ -40,8 +41,8 @@ class UserAPITest {
     @Test
     fun `file should be searchable after it is added as a part of dir`() {
         // given
-        val dirPath = "src/test/resources/level1dir_1/level2dir_1"
-        val filePath = "src/test/resources/level1dir_1/level2dir_1/simpleFile2.txt"
+        val dirPath = level2Dir
+        val filePath = nestedFile
         var filesFound = userAPI.searchWord("august")
         assertTrue(filesFound.isEmpty())
 
@@ -60,8 +61,8 @@ class UserAPITest {
     @Test
     fun `file should be searchable after it is added as a part of nested dir`() {
         // given
-        val dirPath = "src/test/resources/level1dir_1"
-        val filePath = "src/test/resources/level1dir_1/level2dir_1/simpleFile2.txt"
+        val dirPath = level1Dir
+        val filePath = nestedFile
         var filesFound = userAPI.searchWord("august")
         assertTrue(filesFound.isEmpty())
 
@@ -77,7 +78,7 @@ class UserAPITest {
     @Test
     fun `dir should add files of different nestedness level to index`() {
         // given
-        val dirPath = "src/test/resources/level1dir_1"
+        val dirPath = level1Dir
         var filesFound = userAPI.searchWord("august")
         assertTrue(filesFound.isEmpty())
 
@@ -87,7 +88,7 @@ class UserAPITest {
         // then
         filesFound = userAPI.searchWord("august")
         assertEquals(1, filesFound.size)
-        assertEquals("src/test/resources/level1dir_1/level2dir_1/simpleFile2.txt", filesFound[0])
+        assertEquals(nestedFile, filesFound[0])
         filesFound = userAPI.searchWord("january")
         assertEquals(1, filesFound.size)
         assertEquals("src/test/resources/level1dir_1/simpleFile1.txt", filesFound[0])

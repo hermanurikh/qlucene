@@ -65,6 +65,9 @@ class FileSystemStorage @Autowired constructor(
     @PreDestroy
     fun cleanTmpDir() {
         val rootPath = Paths.get(rootDir)
+        if (!Files.exists(rootPath)) {
+            return
+        }
         val contents = rootPath.toFile().listFiles()
         if (contents != null) {
             for (file in contents) {
