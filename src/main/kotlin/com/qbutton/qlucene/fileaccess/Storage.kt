@@ -1,5 +1,6 @@
 package com.qbutton.qlucene.fileaccess
 
+import com.qbutton.qlucene.common.Resettable
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -13,7 +14,7 @@ import javax.annotation.PreDestroy
 /**
  * We are saving previously indexed contents either in memory or in file storage.
  */
-abstract class Storage {
+abstract class Storage : Resettable {
 
     abstract fun readFile(fileId: String): ByteArray?
 
@@ -39,6 +40,10 @@ class InMemoryStorage : Storage() {
     }
 
     override fun hasFile(fileId: String) = storage.containsKey(fileId)
+
+    override fun resetState() {
+        storage.clear()
+    }
 }
 
 @Component
@@ -83,6 +88,11 @@ class FileSystemStorage @Autowired constructor(
     override fun hasFile(fileId: String): Boolean {
         val path = getPath(fileId)
         return Files.exists(path)
+    }
+
+    override fun resetState() {
+        cleanTmpDir()
+        initTmpDir()
     }
 
     private fun getPath(fileId: String) = Paths.get(rootDir + fileId)

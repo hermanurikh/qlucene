@@ -1,5 +1,6 @@
 package com.qbutton.qlucene.updater.background
 
+import com.qbutton.qlucene.common.Resettable
 import com.qbutton.qlucene.dto.DirectoryChangedEvent
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -22,14 +23,17 @@ import javax.annotation.PreDestroy
 class BackgroundEventsPublisher @Autowired constructor(
     private val jdkWatchService: WatchService,
     private val applicationEventPublisher: ApplicationEventPublisher
-) {
+) : Resettable {
 
     private val keyMap = ConcurrentHashMap<WatchKey, Path>()
+
     // if there is an entry in dirToFilteredFiles and set is not empty, we should be interested only in those files which are in the set
     private val dirToFilteredFiles = ConcurrentHashMap<String, MutableSet<String>>()
+
     // we are fine to process updates in single thread since it will be just adding events to spring event bus
     private val executorService = Executors.newSingleThreadExecutor()
-    @Volatile private var processEvents = true
+    @Volatile
+    private var processEvents = true
 
     private val logger = LoggerFactory.getLogger(BackgroundEventsPublisher::class.java)!!
 
@@ -88,5 +92,10 @@ class BackgroundEventsPublisher @Autowired constructor(
         processEvents = false
         executorService.shutdown()
         jdkWatchService.close()
+    }
+
+    override fun resetState() {
+        dirToFilteredFiles.clear()
+        keyMap.clear()
     }
 }

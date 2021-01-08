@@ -1,5 +1,6 @@
 package com.qbutton.qlucene.updater
 
+import com.qbutton.qlucene.common.Resettable
 import com.qbutton.qlucene.dto.UpdateIndexInput
 import com.qbutton.qlucene.fileaccess.FileStorageFacade
 import com.qbutton.qlucene.index.Index
@@ -25,7 +26,7 @@ class FileUpdaterFacade @Autowired constructor(
     private val tokenizers: List<Tokenizer>,
     private val indices: List<Index>,
     private val fileStorageFacade: FileStorageFacade
-) {
+) : Resettable {
     private val locks = ConcurrentHashMap<String, Lock>()
     private val logger = LoggerFactory.getLogger(FileUpdaterFacade::class.java)
 
@@ -74,5 +75,9 @@ class FileUpdaterFacade @Autowired constructor(
         val newFileHash = DigestUtils.md5Digest(newFile.toByteArray())
 
         return oldFileHash.contentEquals(newFileHash)
+    }
+
+    override fun resetState() {
+        locks.clear()
     }
 }

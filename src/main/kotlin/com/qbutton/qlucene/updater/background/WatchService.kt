@@ -1,6 +1,7 @@
 package com.qbutton.qlucene.updater.background
 
 import com.qbutton.qlucene.common.FileIdConverter
+import com.qbutton.qlucene.common.Resettable
 import com.qbutton.qlucene.dto.DirectoryAlreadyRegistered
 import com.qbutton.qlucene.dto.DirectoryRegistrationSuccessful
 import com.qbutton.qlucene.dto.FileAlreadyRegistered
@@ -34,9 +35,9 @@ class WatchService @Autowired constructor(
     private val backgroundEventsPublisher: BackgroundEventsPublisher,
     @Value("\${directory.index.max-depth}")
     private val maxDepth: Int
-) {
+) : Resettable {
     // stores mapping between currently monitored dir and state (monitored recursively or one-level). See class doc.
-    private val monitoredDirectories = HashMap<String, Boolean>()
+    private val monitoredDirectories = ConcurrentHashMap<String, Boolean>()
     private val dirLocks = ConcurrentHashMap<String, Lock>()
     private val monitoredFiles = Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
     private val logger = LoggerFactory.getLogger(WatchService::class.java)
@@ -128,5 +129,11 @@ class WatchService @Autowired constructor(
     private fun tryMonitorFile(path: String): Boolean {
         val fileId = fileIdConverter.toId(path)
         return monitoredFiles.add(fileId)
+    }
+
+    override fun resetState() {
+        monitoredDirectories.clear()
+        monitoredFiles.clear()
+        dirLocks.clear()
     }
 }

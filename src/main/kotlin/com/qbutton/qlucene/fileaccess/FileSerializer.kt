@@ -1,5 +1,6 @@
 package com.qbutton.qlucene.fileaccess
 
+import com.qbutton.qlucene.common.Resettable
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -21,7 +22,7 @@ import java.util.zip.GZIPOutputStream
 class FileSerializer @Autowired constructor(
     @Value("\${indexed-contents.compression.threshold}")
     private val compressionThreshold: Int
-) {
+) : Resettable {
     private val charset = StandardCharsets.UTF_8
     private val compressionMapping = ConcurrentHashMap<String, Boolean>()
     private val logger = LoggerFactory.getLogger(FileSerializer::class.java)
@@ -65,5 +66,9 @@ class FileSerializer @Autowired constructor(
                 val bytes = gzipInputStream.readAllBytes()
                 return String(bytes, charset)
             }
+    }
+
+    override fun resetState() {
+        compressionMapping.clear()
     }
 }

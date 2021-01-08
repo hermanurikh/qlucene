@@ -3,17 +3,20 @@ package com.qbutton.qlucene.integration
 import com.qbutton.qlucene.UserAPI
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.annotation.DirtiesContext
-import org.springframework.test.annotation.DirtiesContext.ClassMode
 
 @SpringBootTest
-@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
 class UserAPITest {
 
     @Autowired private lateinit var userAPI: UserAPI
+
+    @BeforeEach
+    fun clearState() {
+        userAPI.resetState()
+    }
 
     @Test
     fun `file should be searchable after it is added directly`() {

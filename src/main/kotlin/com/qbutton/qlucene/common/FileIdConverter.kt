@@ -10,7 +10,7 @@ This is to unify them - as the paths used as keys may be very long of very short
  hashCode calculation not that dependent on input parameters.
  */
 @Component
-class FileIdConverter {
+class FileIdConverter : Resettable {
     private final val fileNameToId = ConcurrentHashMap<String, String>()
     private final val idToFileName = ConcurrentHashMap<String, String>()
 
@@ -21,4 +21,9 @@ class FileIdConverter {
     }
 
     fun toPath(id: String) = idToFileName[id] ?: throw IllegalStateException("Mapping for id $id is absent")
+
+    override fun resetState() {
+        fileNameToId.clear()
+        idToFileName.clear()
+    }
 }

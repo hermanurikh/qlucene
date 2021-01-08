@@ -1,6 +1,7 @@
 package com.qbutton.qlucene.index
 
 import com.qbutton.qlucene.common.Executable
+import com.qbutton.qlucene.common.Resettable
 import com.qbutton.qlucene.dto.DocumentSearchResult
 import com.qbutton.qlucene.dto.Operation
 import com.qbutton.qlucene.dto.Term
@@ -16,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap
  * system as well (as it is done in FileFacade.kt for previously indexed contents). Or use some 3rd party storage
  * which provides in-memory or filesystem dispatching out-of-the-box.
  */
-abstract class Index : Executable {
+abstract class Index : Executable, Resettable {
     private val storage = ConcurrentHashMap<Term, ConcurrentHashMap<String, Int>>()
 
     /**
@@ -34,5 +35,9 @@ abstract class Index : Executable {
         val termMap = storage.computeIfAbsent(updateInfo.term) { ConcurrentHashMap() }
         val delta = if (updateInfo.operation == Operation.CREATE) updateInfo.count else -updateInfo.count
         termMap.merge(updateInfo.fileId, delta, Integer::sum)
+    }
+
+    override fun resetState() {
+        storage.clear()
     }
 }

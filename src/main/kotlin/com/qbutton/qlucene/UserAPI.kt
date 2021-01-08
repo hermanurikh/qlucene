@@ -1,5 +1,6 @@
 package com.qbutton.qlucene
 
+import com.qbutton.qlucene.common.Resettable
 import com.qbutton.qlucene.dto.AbnormalFileRegistrationResult
 import com.qbutton.qlucene.dto.FileNotFoundRegistrationResult
 import com.qbutton.qlucene.dto.RegistrationResult
@@ -23,7 +24,8 @@ import java.nio.file.Paths
 @RestController
 class UserAPI @Autowired constructor(
     private val searchFacade: SearchFacade,
-    private val watchService: WatchService
+    private val watchService: WatchService,
+    private val statefulBeans: List<Resettable>
 ) {
     /**
      * E.g.
@@ -57,4 +59,12 @@ class UserAPI @Autowired constructor(
      */
     @GetMapping("/search/sentence/{token}")
     fun searchSentence(@PathVariable token: String) = searchFacade.search(Sentence(token))
+
+    /**
+     * Clears current indices and resets state. This method is not thread-safe and is made mostly for ease of testing.
+     */
+    @GetMapping("/reset/")
+    fun resetState() {
+        statefulBeans.forEach { it.resetState() }
+    }
 }
