@@ -1,6 +1,0 @@
-zero word
-one word
-word twotwo
-word three3
-word four
-word five

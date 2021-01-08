@@ -1,5 +1,0 @@
-one word
-word two
-word three
-word five
-word six
