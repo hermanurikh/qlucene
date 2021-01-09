@@ -1,12 +1,18 @@
 package com.qbutton.qlucene.updater.background
 
 import com.qbutton.qlucene.common.FileIdConverter
+import com.qbutton.qlucene.common.Locker
 import com.qbutton.qlucene.common.Resettable
 import com.qbutton.qlucene.dto.DirectoryAlreadyRegistered
 import com.qbutton.qlucene.dto.DirectoryRegistrationSuccessful
+import com.qbutton.qlucene.dto.DirectoryUnregistrationSuccessful
 import com.qbutton.qlucene.dto.FileAlreadyRegistered
+import com.qbutton.qlucene.dto.FileMonitorState
 import com.qbutton.qlucene.dto.FileRegistrationSuccessful
+import com.qbutton.qlucene.dto.FileUnregistrationSuccessful
+import com.qbutton.qlucene.dto.NotRegistered
 import com.qbutton.qlucene.dto.RegistrationResult
+import com.qbutton.qlucene.dto.UnregistrationResult
 import com.qbutton.qlucene.updater.FileUpdaterFacade
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -14,10 +20,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.locks.Lock
-import java.util.concurrent.locks.ReentrantLock
 
 /**
  * A class to register directories or files for monitoring.
@@ -30,16 +33,15 @@ import java.util.concurrent.locks.ReentrantLock
  */
 @Component
 class WatchService @Autowired constructor(
+    private val locker: Locker,
     private val fileIdConverter: FileIdConverter,
     private val fileUpdaterFacade: FileUpdaterFacade,
     private val backgroundEventsPublisher: BackgroundEventsPublisher,
     @Value("\${directory.index.max-depth}")
     private val maxDepth: Int
 ) : Resettable {
-    // stores mapping between currently monitored dir and state (monitored recursively or one-level). See class doc.
-    private val monitoredDirectories = ConcurrentHashMap<String, Boolean>()
-    private val dirLocks = ConcurrentHashMap<String, Lock>()
-    private val monitoredFiles = Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
+    // stores mapping between currently monitored dir/file and state (monitored recursively or one-level). See class doc.
+    private val monitoredFiles = ConcurrentHashMap<String, FileMonitorState>()
     private val logger = LoggerFactory.getLogger(WatchService::class.java)
 
     /**
@@ -57,33 +59,32 @@ class WatchService @Autowired constructor(
      * We need a lock because many threads may be calling it simultaneously, and operations inside use CAS and are not atomic.
      */
     fun registerDir(path: String, shouldBeCompletelyMonitored: Boolean, fileToMonitor: String? = null): RegistrationResult {
-
-        val lock = dirLocks.computeIfAbsent(path) { ReentrantLock() }
+        val dirId = fileIdConverter.toId(path)
         try {
-            lock.lock()
-            val currValue = monitoredDirectories[path]
+            locker.lockId(dirId)
+            val currValue = monitoredFiles[dirId]
             if (shouldBeCompletelyMonitored) {
-                return if (currValue != null && currValue) {
+                return if (currValue != null && currValue.isMonitoredCompletely) {
                     // if we need complete monitoring and mapping is there and already complete, do nothing
                     DirectoryAlreadyRegistered(path)
                 } else if (currValue == null) {
                     // if we need complete monitoring and mapping is not there, put value and attach watcher
-                    monitoredDirectories[path] = true
+                    monitoredFiles[dirId] = FileMonitorState(isDirectory = true, isMonitoredCompletely = true)
                     backgroundEventsPublisher.attachWatcher(path)
                     DirectoryRegistrationSuccessful(path)
                 } else {
                     // if we need complete monitoring and current is non-complete, update value and remove specific mappings
-                    monitoredDirectories[path] = true
+                    monitoredFiles[dirId] = FileMonitorState(isDirectory = true, isMonitoredCompletely = true)
                     backgroundEventsPublisher.clearFilteredFiles(path)
                     DirectoryRegistrationSuccessful(path)
                 }
             } else {
-                return if (currValue != null && currValue) {
+                return if (currValue != null && currValue.isMonitoredCompletely) {
                     // if we don't need complete monitoring, but it is already complete, do nothing
                     DirectoryAlreadyRegistered(path)
                 } else if (currValue == null) {
                     // if we need incomplete monitoring and mapping is not there, put value, attach watcher and add files
-                    monitoredDirectories[path] = false
+                    monitoredFiles[dirId] = FileMonitorState(isDirectory = true, isMonitoredCompletely = false)
                     backgroundEventsPublisher.updateFilteredFiles(path, fileToMonitor!!)
                     backgroundEventsPublisher.attachWatcher(path)
                     DirectoryRegistrationSuccessful(path)
@@ -94,7 +95,7 @@ class WatchService @Autowired constructor(
                 }
             }
         } finally {
-            lock.unlock()
+            locker.unlockId(dirId)
         }
     }
 
@@ -111,29 +112,55 @@ class WatchService @Autowired constructor(
         return result
     }
 
-    fun registerFile(path: String): RegistrationResult {
-        if (!tryMonitorFile(path)) {
-            return FileAlreadyRegistered(path)
+    fun unregister(path: String): UnregistrationResult {
+        val fileId = fileIdConverter.toId(path)
+
+        try {
+            locker.lockId(fileId)
+            val monitorState = monitoredFiles.remove(fileId) ?: return NotRegistered(path)
+            return if (monitorState.isDirectory) {
+                // TODO("for directory, we need to walk file tree. Check above doesn't work as file is not there. Also it doesn't work with the monitored dir being deleted")
+                DirectoryUnregistrationSuccessful(path)
+            } else {
+                // for file, just update it to empty contents
+                fileUpdaterFacade.update(fileId)
+                FileUnregistrationSuccessful(path)
+            }
+        } finally {
+            locker.unlockId(fileId)
         }
-        logger.info("registering file $path")
-
-        val parentDir = Paths.get(path).parent
-        registerDir(parentDir.toString(), false, path)
-
-        logger.info("adding file $path to index")
-
-        fileUpdaterFacade.update(fileIdConverter.toId(path))
-        return FileRegistrationSuccessful(path)
     }
 
-    private fun tryMonitorFile(path: String): Boolean {
+    fun registerFile(path: String): RegistrationResult {
         val fileId = fileIdConverter.toId(path)
-        return monitoredFiles.add(fileId)
+        try {
+            locker.lockId(fileId)
+            if (!tryMonitorFile(fileId)) {
+                return FileAlreadyRegistered(path)
+            }
+            logger.info("registering file $path")
+
+            val parentDir = Paths.get(path).parent
+            registerDir(parentDir.toString(), false, path)
+
+            logger.info("adding file $path to index")
+
+            fileUpdaterFacade.update(fileIdConverter.toId(path))
+            return FileRegistrationSuccessful(path)
+        } finally {
+            locker.unlockId(fileId)
+        }
+    }
+
+    private fun tryMonitorFile(fileId: String): Boolean {
+        val additionResult = monitoredFiles.putIfAbsent(
+            fileId,
+            FileMonitorState(isDirectory = false, isMonitoredCompletely = false)
+        )
+        return additionResult == null
     }
 
     override fun resetState() {
-        monitoredDirectories.clear()
         monitoredFiles.clear()
-        dirLocks.clear()
     }
 }

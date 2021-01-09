@@ -1,5 +1,6 @@
 package com.qbutton.qlucene.updater.background
 
+import com.qbutton.qlucene.common.FileIdConverter
 import com.qbutton.qlucene.common.Resettable
 import com.qbutton.qlucene.dto.DirectoryChangedEvent
 import org.slf4j.LoggerFactory
@@ -22,13 +23,14 @@ import javax.annotation.PreDestroy
 @Component
 class BackgroundEventsPublisher @Autowired constructor(
     private val jdkWatchService: WatchService,
-    private val applicationEventPublisher: ApplicationEventPublisher
+    private val applicationEventPublisher: ApplicationEventPublisher,
+    private val fileIdConverter: FileIdConverter
 ) : Resettable {
 
     private val keyMap = ConcurrentHashMap<WatchKey, Path>()
 
     // if there is an entry in dirToFilteredFiles and set is not empty, we should be interested only in those files which are in the set
-    private val dirToFilteredFiles = ConcurrentHashMap<String, MutableSet<String>>()
+    private val dirIdToFilteredFiles = ConcurrentHashMap<String, MutableSet<String>>()
 
     // we are fine to process updates in single thread since it will be just adding events to spring event bus
     private val executorService = Executors.newSingleThreadExecutor()
@@ -44,12 +46,14 @@ class BackgroundEventsPublisher @Autowired constructor(
     }
 
     fun updateFilteredFiles(path: String, filteredFile: String) {
-        val filteredFiles = dirToFilteredFiles.computeIfAbsent(path) { HashSet() }
+        val pathId = fileIdConverter.toId(path)
+        val filteredFiles = dirIdToFilteredFiles.computeIfAbsent(pathId) { HashSet() }
         filteredFiles.add(filteredFile)
     }
 
     fun clearFilteredFiles(path: String) {
-        dirToFilteredFiles.remove(path)
+        val pathId = fileIdConverter.toId(path)
+        dirIdToFilteredFiles.remove(pathId)
     }
 
     /**
@@ -68,19 +72,17 @@ class BackgroundEventsPublisher @Autowired constructor(
                     logger.error("Dir not found for key $key")
                     continue
                 }
+
+                val pathId = fileIdConverter.toId(dir.toString())
+
                 @Suppress("UNCHECKED_CAST")
-                val event = DirectoryChangedEvent(dir, key.pollEvents() as List<WatchEvent<Path>>, dirToFilteredFiles[dir.toString()])
+                val event = DirectoryChangedEvent(dir, key.pollEvents() as List<WatchEvent<Path>>, dirIdToFilteredFiles[pathId])
                 applicationEventPublisher.publishEvent(event)
 
                 // reset key and remove from set if directory no longer accessible
                 val valid = key.reset()
                 if (!valid) {
                     keyMap.remove(key)
-
-                    // all directories are inaccessible
-                    if (keyMap.isEmpty()) {
-                        break
-                    }
                 }
             }
         }
@@ -96,7 +98,7 @@ class BackgroundEventsPublisher @Autowired constructor(
     }
 
     override fun resetState() {
-        dirToFilteredFiles.clear()
+        dirIdToFilteredFiles.clear()
         keyMap.forEach { (k, _) -> k.cancel() }
         keyMap.clear()
     }

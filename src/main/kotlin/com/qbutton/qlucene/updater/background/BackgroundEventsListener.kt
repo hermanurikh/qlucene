@@ -18,9 +18,10 @@ import java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY
  */
 @Component
 class BackgroundEventsListener @Autowired constructor(
-    private val fileUpdaterFacade: FileUpdaterFacade,
+    private val userAPI: UserAPI,
+    private val watchService: WatchService,
     private val fileIdConverter: FileIdConverter,
-    private val userAPI: UserAPI
+    private val fileUpdaterFacade: FileUpdaterFacade
 ) {
 
     private val logger = LoggerFactory.getLogger(BackgroundEventsListener::class.java)!!
@@ -58,11 +59,7 @@ class BackgroundEventsListener @Autowired constructor(
                 }
                 ENTRY_DELETE -> {
                     logger.info("DELETE event detected for $path")
-                    // for file, update it to empty contents
-                    if (!Files.isDirectory(resolvedEntry)) {
-                        fileUpdaterFacade.update(entryId)
-                    }
-                    // TODO("for directory, we need to walk file tree. Check above doesn't work as file is not there")
+                    watchService.unregister(path)
                 }
             }
         }

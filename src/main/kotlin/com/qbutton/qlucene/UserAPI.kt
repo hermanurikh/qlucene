@@ -29,7 +29,7 @@ class UserAPI @Autowired constructor(
 ) {
     /**
      * E.g.
-     * curl --data "path=/Users/gurikh/code/qlucene/src/test/resources/files/simpleFile1.txt" http://localhost:8087/add/
+     * curl --data "path=src/test/resources/rootdir/nesteddir/simpleFile2.txt" http://localhost:8077/add/
      */
     @PostMapping("/add/")
     fun addToIndex(@RequestParam path: String): RegistrationResult {

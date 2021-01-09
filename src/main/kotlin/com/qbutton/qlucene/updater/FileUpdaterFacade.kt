@@ -1,6 +1,6 @@
 package com.qbutton.qlucene.updater
 
-import com.qbutton.qlucene.common.Resettable
+import com.qbutton.qlucene.common.Locker
 import com.qbutton.qlucene.dto.UpdateIndexInput
 import com.qbutton.qlucene.fileaccess.FileStorageFacade
 import com.qbutton.qlucene.index.Index
@@ -9,9 +9,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import org.springframework.util.DigestUtils
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.locks.Lock
-import java.util.concurrent.locks.ReentrantLock
 
 /**
  * A facade to perform file update operation:
@@ -22,23 +19,22 @@ import java.util.concurrent.locks.ReentrantLock
  */
 @Component
 class FileUpdaterFacade @Autowired constructor(
-    private val diffCalculator: DiffCalculator,
-    private val tokenizers: List<Tokenizer>,
     private val indices: List<Index>,
+    private val locker: Locker,
+    private val tokenizers: List<Tokenizer>,
+    private val diffCalculator: DiffCalculator,
     private val fileStorageFacade: FileStorageFacade
-) : Resettable {
-    private val locks = ConcurrentHashMap<String, Lock>()
+) {
     private val logger = LoggerFactory.getLogger(FileUpdaterFacade::class.java)
 
     fun update(fileId: String) {
         logger.info("updating file $fileId")
 
-        val lock = locks.computeIfAbsent(fileId) { ReentrantLock() }
         val oldFile: String
         val newFile: String
         try {
             // update may be called for same file from different threads simultaneously. Following operations are not atomic, we need to lock while executing
-            lock.lock()
+            locker.lockId(fileId)
             oldFile = fileStorageFacade.getLastIndexedContents(fileId)
             newFile = fileStorageFacade.readRawTextFromFileSystem(fileId)
 
@@ -52,7 +48,7 @@ class FileUpdaterFacade @Autowired constructor(
             /* no need to hold lock any more, we've updated the cached contents and have the diff,
              now we just need to propagate diff to index which is eventually consistent
              */
-            lock.unlock()
+            locker.unlockId(fileId)
         }
         // loading files up to 10MB (which was a top limit in requirements) and comparing the tokens looks almost instant (< 1 second)
         for (tokenizer in tokenizers) {
@@ -75,9 +71,5 @@ class FileUpdaterFacade @Autowired constructor(
         val newFileHash = DigestUtils.md5Digest(newFile.toByteArray())
 
         return oldFileHash.contentEquals(newFileHash)
-    }
-
-    override fun resetState() {
-        locks.clear()
     }
 }
