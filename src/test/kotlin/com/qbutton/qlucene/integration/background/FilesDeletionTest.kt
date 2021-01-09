@@ -30,15 +30,12 @@ class FilesDeletionTest {
 
     @BeforeEach
     fun createFilesAndDirs() {
+        removeFilesAndDirs()
         val path = Paths.get(tmpTestNestedDir)
-        if (!Files.exists(path)) {
-            Files.createDirectories(path)
-        }
+        Files.createDirectories(path)
         val pathFrom = Paths.get(nestedFile)
         val pathTo = Paths.get(fileToDeletePath)
-        if (!Files.exists(pathTo)) {
-            Files.copy(pathFrom, pathTo)
-        }
+        Files.copy(pathFrom, pathTo)
         userAPI.resetState()
     }
 

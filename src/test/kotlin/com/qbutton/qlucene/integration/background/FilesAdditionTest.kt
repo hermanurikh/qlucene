@@ -31,10 +31,9 @@ class FilesAdditionTest {
 
     @BeforeEach
     fun createDirs() {
+        removeFilesAndDirs()
         val path = Paths.get(tmpTestNestedDir)
-        if (!Files.exists(path)) {
-            Files.createDirectories(path)
-        }
+        Files.createDirectories(path)
         userAPI.resetState()
     }
 
