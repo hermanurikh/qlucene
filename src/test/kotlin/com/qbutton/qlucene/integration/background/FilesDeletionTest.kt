@@ -1,6 +1,10 @@
-package com.qbutton.qlucene.integration
+package com.qbutton.qlucene.integration.background
 
 import com.qbutton.qlucene.UserAPI
+import com.qbutton.qlucene.integration.nestedFile
+import com.qbutton.qlucene.integration.nestedFileName
+import com.qbutton.qlucene.integration.tmpDir
+import com.qbutton.qlucene.integration.tmpTestNestedDir
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -9,9 +13,13 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.util.FileSystemUtils
 import java.nio.file.Files
 import java.nio.file.Paths
 
+/**
+ * This test checks that background events related to file deletion are caught and handled properly.
+ */
 @SpringBootTest
 class FilesDeletionTest {
 
@@ -31,16 +39,9 @@ class FilesDeletionTest {
         if (!Files.exists(pathTo)) {
             Files.copy(pathFrom, pathTo)
         }
+        userAPI.resetState()
     }
 
-    @Disabled(
-        """
-    This test uses Thread.sleep to wait for background event to come which may be not the best practices. 
-    Also, it slows
-    down the build time dramatically.
-    It still works though, so enable it if you want to check this functionality.
-    """
-    )
     @Test
     fun `file should not be searchable after it is deleted directly`() {
         // given
@@ -48,7 +49,8 @@ class FilesDeletionTest {
 
         // when
         Files.delete(Paths.get(fileToDeletePath))
-        Thread.sleep(15000)
+        // yeah, this is bad, that's why these tests are disabled by default in build.gradle
+        Thread.sleep(eventsRetrievalDelay)
 
         // then
         // index should not contain the terms any more
@@ -85,19 +87,6 @@ class FilesDeletionTest {
 
     @AfterEach
     fun removeFilesAndDirs() {
-        for (path in listOf(tmpTestNestedDir, tmpTestDir, tmpDir)) {
-            deleteDir(path)
-        }
-    }
-
-    private fun deleteDir(path: String) {
-        val rootPath = Paths.get(path)
-        val contents = rootPath.toFile().listFiles()
-        if (contents != null) {
-            for (file in contents) {
-                Files.delete(file.toPath())
-            }
-        }
-        Files.delete(rootPath)
+        FileSystemUtils.deleteRecursively(Paths.get(tmpDir))
     }
 }

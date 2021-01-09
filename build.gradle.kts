@@ -35,4 +35,10 @@ tasks.withType<KotlinCompile> {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+
+    // the following tests check background events catching and use Thread.sleep for some significant number.
+    // They are disabled by default, and can be turned on for some dev checks by -Dtest.profile=integration
+    if (System.getProperty("test.profile") != "integration") {
+        exclude("com/qbutton/qlucene/integration/background")
+    }
 }

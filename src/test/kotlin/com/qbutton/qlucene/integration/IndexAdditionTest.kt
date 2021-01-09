@@ -5,11 +5,15 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertAll
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 
+/**
+ * This test checks operations which are triggered by using UserAPI, e.g. direct addition to index.
+ */
 @SpringBootTest
-class FilesAdditionTest {
+class IndexAdditionTest {
 
     @Autowired
     private lateinit var userAPI: UserAPI
@@ -91,6 +95,44 @@ class FilesAdditionTest {
         assertEquals(nestedFile, filesFound[0])
         filesFound = userAPI.searchWord("january")
         assertEquals(1, filesFound.size)
-        assertEquals("src/test/resources/level1dir_1/simpleFile1.txt", filesFound[0])
+        assertEquals("$level1Dir/simpleFile1.txt", filesFound[0])
+    }
+
+    @Test
+    fun `adding file, then dir should add different files at different times`() {
+        // given
+        val filePath = nestedFile
+        var filesFound = userAPI.searchWord("august")
+        assertTrue(filesFound.isEmpty())
+        filesFound = userAPI.searchWord("january")
+        assertTrue(filesFound.isEmpty())
+        filesFound = userAPI.searchWord("devils")
+        assertTrue(filesFound.isEmpty())
+
+        // when we add only one file, we find only it's contents
+        userAPI.addToIndex(filePath)
+        filesFound = userAPI.searchWord("august")
+        assertEquals(1, filesFound.size)
+        assertEquals(nestedFile, filesFound[0])
+        filesFound = userAPI.searchWord("january")
+        assertTrue(filesFound.isEmpty())
+        filesFound = userAPI.searchWord("devils")
+        assertTrue(filesFound.isEmpty())
+
+        // when afterwards we add a top-level directory, it adds other files, but current file is still there
+        userAPI.addToIndex(level1Dir)
+        filesFound = userAPI.searchWord("august")
+        assertEquals(1, filesFound.size)
+        assertEquals(nestedFile, filesFound[0])
+        filesFound = userAPI.searchWord("january")
+        assertEquals(1, filesFound.size)
+        assertEquals("$level1Dir/simpleFile1.txt", filesFound[0])
+        filesFound = userAPI.searchWord("devils")
+        assertEquals(3, filesFound.size)
+        assertAll(
+            { filesFound.contains("$level1Dir/simpleFile1.txt") },
+            { filesFound.contains("$level1Dir/englishWords1.txt") },
+            { filesFound.contains("$level1Dir/englishWords2.txt") }
+        )
     }
 }

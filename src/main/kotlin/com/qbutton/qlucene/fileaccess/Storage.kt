@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import org.springframework.util.FileSystemUtils
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
@@ -68,13 +69,7 @@ class FileSystemStorage @Autowired constructor(
         if (!Files.exists(rootPath)) {
             return
         }
-        val contents = rootPath.toFile().listFiles()
-        if (contents != null) {
-            for (file in contents) {
-                Files.delete(file.toPath())
-            }
-        }
-        Files.delete(rootPath)
+        FileSystemUtils.deleteRecursively(rootPath)
         logger.info("directory $rootPath removed")
     }
 

@@ -90,12 +90,14 @@ class BackgroundEventsPublisher @Autowired constructor(
     fun close() {
         logger.info("Shutting down watch service")
         processEvents = false
+        keyMap.forEach { (k, _) -> k.cancel() }
         executorService.shutdown()
         jdkWatchService.close()
     }
 
     override fun resetState() {
         dirToFilteredFiles.clear()
+        keyMap.forEach { (k, _) -> k.cancel() }
         keyMap.clear()
     }
 }
