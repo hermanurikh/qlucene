@@ -117,9 +117,16 @@ class WatchService @Autowired constructor(
 
         try {
             locker.lockId(fileId)
+            // remove the mapping immediately, so that later they could be re-registered
             val monitorState = monitoredFiles.remove(fileId) ?: return NotRegistered(path)
             return if (monitorState.isDirectory) {
-                // TODO("for directory, we need to walk file tree. Check above doesn't work as file is not there. Also it doesn't work with the monitored dir being deleted")
+                /*
+                For directory deletion, it is not obvious how to restore which files were there - we can't walk it as it has already been deleted.
+                I don't want to cache file system tree to walk it on directory deletion as it looks fragile and excessive.
+
+                So I decided to go with lazy approach: the files which are no longer there due to directory deletion are filtered out on search,
+                and we also push an event to exclude this file from indices.
+                 */
                 DirectoryUnregistrationSuccessful(path)
             } else {
                 // for file, just update it to empty contents

@@ -23,8 +23,8 @@ import javax.annotation.PreDestroy
 @Component
 class BackgroundEventsPublisher @Autowired constructor(
     private val jdkWatchService: WatchService,
-    private val applicationEventPublisher: ApplicationEventPublisher,
-    private val fileIdConverter: FileIdConverter
+    private val fileIdConverter: FileIdConverter,
+    private val applicationEventPublisher: ApplicationEventPublisher
 ) : Resettable {
 
     private val keyMap = ConcurrentHashMap<WatchKey, Path>()

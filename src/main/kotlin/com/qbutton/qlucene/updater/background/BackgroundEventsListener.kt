@@ -3,6 +3,8 @@ package com.qbutton.qlucene.updater.background
 import com.qbutton.qlucene.UserAPI
 import com.qbutton.qlucene.common.FileIdConverter
 import com.qbutton.qlucene.dto.DirectoryChangedEvent
+import com.qbutton.qlucene.dto.FileDeletedEvent
+import com.qbutton.qlucene.dto.InstanceChangedEvent
 import com.qbutton.qlucene.updater.FileUpdaterFacade
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -27,7 +29,20 @@ class BackgroundEventsListener @Autowired constructor(
     private val logger = LoggerFactory.getLogger(BackgroundEventsListener::class.java)!!
 
     @EventListener
-    fun listen(directoryChangedEvent: DirectoryChangedEvent) {
+    fun listen(instanceChangedEvent: InstanceChangedEvent) {
+
+        when (instanceChangedEvent) {
+            is DirectoryChangedEvent -> {
+                handleDirectoryChangedEvent(instanceChangedEvent)
+            }
+            is FileDeletedEvent -> {
+                logger.info("DELETE FILE event detected for ${instanceChangedEvent.monitoredFile}")
+                watchService.unregister(instanceChangedEvent.monitoredFile.toString())
+            }
+        }
+    }
+
+    private fun handleDirectoryChangedEvent(directoryChangedEvent: DirectoryChangedEvent) {
         for (event in directoryChangedEvent.events) {
             val kind = event.kind()
 

@@ -4,12 +4,12 @@ import com.qbutton.qlucene.UserAPI
 import com.qbutton.qlucene.integration.nestedFile
 import com.qbutton.qlucene.integration.nestedFileName
 import com.qbutton.qlucene.integration.tmpDir
+import com.qbutton.qlucene.integration.tmpTestDir
 import com.qbutton.qlucene.integration.tmpTestNestedDir
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -42,7 +42,7 @@ class FilesDeletionTest {
     @Test
     fun `file should not be searchable after it is deleted directly`() {
         // given
-        ensureFileIsSearchable()
+        ensureFileIsSearchable(fileToDeletePath)
 
         // when
         Files.delete(Paths.get(fileToDeletePath))
@@ -55,28 +55,38 @@ class FilesDeletionTest {
         assertTrue(filesFound.isEmpty())
     }
 
-    @Disabled(
-        """
-    In Java, deleting a dir requires prior deleting of all files. So not clear how to test deleting the enclosing dir 
-    without triggering file deletion event first.
-        """
-    )
     @Test
     fun `file should not be searchable after it is deleted as part of dir`() {
+        // given
+        ensureFileIsSearchable(tmpTestDir)
+
+        // when
+        FileSystemUtils.deleteRecursively(Paths.get(tmpTestNestedDir))
+        Thread.sleep(eventsRetrievalDelay)
+
+        // then
+        // index should not contain the terms any more
+        val filesFound = userAPI.searchWord("august")
+        assertTrue(filesFound.isEmpty())
     }
 
-    @Disabled(
-        """
-    In Java, deleting a dir requires prior deleting of all files. So not clear how to test deleting the enclosing dir 
-    without triggering file deletion event first.
-        """
-    )
     @Test
     fun `file should not be searchable after it is deleted as part of nested dir`() {
+        // given
+        ensureFileIsSearchable(tmpDir)
+
+        // when
+        FileSystemUtils.deleteRecursively(Paths.get(tmpTestDir))
+        Thread.sleep(eventsRetrievalDelay)
+
+        // then
+        // index should not contain the terms any more
+        val filesFound = userAPI.searchWord("august")
+        assertTrue(filesFound.isEmpty())
     }
 
-    private fun ensureFileIsSearchable() {
-        userAPI.addToIndex(fileToDeletePath)
+    private fun ensureFileIsSearchable(path: String) {
+        userAPI.addToIndex(path)
         val filesFound = userAPI.searchWord("august")
         assertEquals(1, filesFound.size)
         assertEquals(fileToDeletePath, filesFound[0])
