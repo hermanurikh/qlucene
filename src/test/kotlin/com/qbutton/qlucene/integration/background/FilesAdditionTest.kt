@@ -1,10 +1,10 @@
 package com.qbutton.qlucene.integration.background
 
 import com.qbutton.qlucene.UserAPI
-import com.qbutton.qlucene.integration.level1Dir
-import com.qbutton.qlucene.integration.level2DirName
+import com.qbutton.qlucene.integration.nestedDirName
 import com.qbutton.qlucene.integration.nestedFile
 import com.qbutton.qlucene.integration.nestedFileName
+import com.qbutton.qlucene.integration.rootDir
 import com.qbutton.qlucene.integration.tmpDir
 import com.qbutton.qlucene.integration.tmpTestDir
 import com.qbutton.qlucene.integration.tmpTestNestedDir
@@ -79,7 +79,7 @@ class FilesAdditionTest {
     @Test
     fun `when dir is monitored, adding a dir to it with several files should add all of them to index`() {
         // given
-        val dirFrom = level1Dir
+        val dirFrom = rootDir
         val dirTo = "$tmpTestNestedDir/innerDir"
         userAPI.addToIndex(tmpTestNestedDir)
         var filesFound = userAPI.searchWord("august")
@@ -92,7 +92,7 @@ class FilesAdditionTest {
         // then
         filesFound = userAPI.searchWord("august")
         assertEquals(1, filesFound.size)
-        assertEquals("$dirTo/$level2DirName/$nestedFileName", filesFound[0])
+        assertEquals("$dirTo/$nestedDirName/$nestedFileName", filesFound[0])
         filesFound = userAPI.searchWord("january")
         assertEquals(1, filesFound.size)
         assertEquals("$dirTo/simpleFile1.txt", filesFound[0])
@@ -108,7 +108,7 @@ class FilesAdditionTest {
     @Test
     fun `when dir is monitored, adding a dir to nested internal dir with several files should add all of them to index`() {
         // given
-        val dirFrom = level1Dir
+        val dirFrom = rootDir
         val dirTo = "$tmpTestNestedDir/innerDir"
         userAPI.addToIndex(tmpTestDir)
         var filesFound = userAPI.searchWord("august")
@@ -121,7 +121,7 @@ class FilesAdditionTest {
         // then
         filesFound = userAPI.searchWord("august")
         assertEquals(1, filesFound.size)
-        assertEquals("$dirTo/$level2DirName/$nestedFileName", filesFound[0])
+        assertEquals("$dirTo/$nestedDirName/$nestedFileName", filesFound[0])
         filesFound = userAPI.searchWord("january")
         assertEquals(1, filesFound.size)
         assertEquals("$dirTo/simpleFile1.txt", filesFound[0])

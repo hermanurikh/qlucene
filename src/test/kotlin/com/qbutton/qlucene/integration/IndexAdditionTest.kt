@@ -45,7 +45,7 @@ class IndexAdditionTest {
     @Test
     fun `file should be searchable after it is added as a part of dir`() {
         // given
-        val dirPath = level2Dir
+        val dirPath = nestedDir
         val filePath = nestedFile
         var filesFound = userAPI.searchWord("august")
         assertTrue(filesFound.isEmpty())
@@ -65,7 +65,7 @@ class IndexAdditionTest {
     @Test
     fun `file should be searchable after it is added as a part of nested dir`() {
         // given
-        val dirPath = level1Dir
+        val dirPath = rootDir
         val filePath = nestedFile
         var filesFound = userAPI.searchWord("august")
         assertTrue(filesFound.isEmpty())
@@ -82,7 +82,7 @@ class IndexAdditionTest {
     @Test
     fun `dir should add files of different nestedness level to index`() {
         // given
-        val dirPath = level1Dir
+        val dirPath = rootDir
         var filesFound = userAPI.searchWord("august")
         assertTrue(filesFound.isEmpty())
 
@@ -95,7 +95,7 @@ class IndexAdditionTest {
         assertEquals(nestedFile, filesFound[0])
         filesFound = userAPI.searchWord("january")
         assertEquals(1, filesFound.size)
-        assertEquals("$level1Dir/simpleFile1.txt", filesFound[0])
+        assertEquals("$rootDir/simpleFile1.txt", filesFound[0])
     }
 
     @Test
@@ -120,19 +120,19 @@ class IndexAdditionTest {
         assertTrue(filesFound.isEmpty())
 
         // when afterwards we add a top-level directory, it adds other files, but current file is still there
-        userAPI.addToIndex(level1Dir)
+        userAPI.addToIndex(rootDir)
         filesFound = userAPI.searchWord("august")
         assertEquals(1, filesFound.size)
         assertEquals(nestedFile, filesFound[0])
         filesFound = userAPI.searchWord("january")
         assertEquals(1, filesFound.size)
-        assertEquals("$level1Dir/simpleFile1.txt", filesFound[0])
+        assertEquals("$rootDir/simpleFile1.txt", filesFound[0])
         filesFound = userAPI.searchWord("devils")
         assertEquals(3, filesFound.size)
         assertAll(
-            { filesFound.contains("$level1Dir/simpleFile1.txt") },
-            { filesFound.contains("$level1Dir/englishWords1.txt") },
-            { filesFound.contains("$level1Dir/englishWords2.txt") }
+            { filesFound.contains("$rootDir/simpleFile1.txt") },
+            { filesFound.contains("$rootDir/englishWords1.txt") },
+            { filesFound.contains("$rootDir/englishWords2.txt") }
         )
     }
 }
