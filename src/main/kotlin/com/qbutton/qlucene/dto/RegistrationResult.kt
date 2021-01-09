@@ -12,6 +12,7 @@ class FileAlreadyRegistered(path: String) : RegistrationResult("File $path is al
 
 class DirectoryRegistrationSuccessful(path: String) : RegistrationResult("Successfully registered directory: $path")
 class DirectoryAlreadyRegistered(path: String) : RegistrationResult("Directory $path is already registered")
+class DirectoryShouldNotBeRegistered(path: String) : RegistrationResult("Directory $path should not be registered")
 
 class AbnormalFileRegistrationResult(path: String) : RegistrationResult("File $path is not a directory or a normal file")
 class FileNotFoundRegistrationResult(path: String) : RegistrationResult("File $path was not found")

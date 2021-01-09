@@ -5,6 +5,7 @@ import com.qbutton.qlucene.common.Locker
 import com.qbutton.qlucene.common.Resettable
 import com.qbutton.qlucene.dto.DirectoryAlreadyRegistered
 import com.qbutton.qlucene.dto.DirectoryRegistrationSuccessful
+import com.qbutton.qlucene.dto.DirectoryShouldNotBeRegistered
 import com.qbutton.qlucene.dto.DirectoryUnregistrationSuccessful
 import com.qbutton.qlucene.dto.FileAlreadyRegistered
 import com.qbutton.qlucene.dto.FileMonitorState
@@ -38,11 +39,14 @@ class WatchService @Autowired constructor(
     private val fileUpdaterFacade: FileUpdaterFacade,
     private val backgroundEventsPublisher: BackgroundEventsPublisher,
     @Value("\${directory.index.max-depth}")
-    private val maxDepth: Int
+    private val maxDepth: Int,
+    @Value("\${indexed-contents.root-dir}")
+    private val storageIndexDir: String
 ) : Resettable {
     // stores mapping between currently monitored dir/file and state (monitored recursively or one-level). See class doc.
     private val monitoredFiles = ConcurrentHashMap<String, FileMonitorState>()
     private val logger = LoggerFactory.getLogger(WatchService::class.java)
+    private val indexStoragePath = Paths.get(storageIndexDir)
 
     /**
      * Attempts to register a directory, completely or to monitor specific file.
@@ -59,6 +63,10 @@ class WatchService @Autowired constructor(
      * We need a lock because many threads may be calling it simultaneously, and operations inside use CAS and are not atomic.
      */
     fun registerDir(path: String, shouldBeCompletelyMonitored: Boolean, fileToMonitor: String? = null): RegistrationResult {
+        if (Files.isSameFile(indexStoragePath, Paths.get(path))) {
+            // don't attempt to register files in directory storing index, otherwise it may be endless recursion
+            return DirectoryShouldNotBeRegistered(path)
+        }
         val dirId = fileIdConverter.toId(path)
         try {
             locker.lockId(dirId)
