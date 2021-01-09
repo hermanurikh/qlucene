@@ -105,6 +105,35 @@ class FilesAdditionTest {
         )
     }
 
+    @Test
+    fun `when dir is monitored, adding a dir to nested internal dir with several files should add all of them to index`() {
+        // given
+        val dirFrom = level1Dir
+        val dirTo = "$tmpTestNestedDir/innerDir"
+        userAPI.addToIndex(tmpTestDir)
+        var filesFound = userAPI.searchWord("august")
+        assertTrue(filesFound.isEmpty())
+
+        // when
+        FileSystemUtils.copyRecursively(Paths.get(dirFrom), Paths.get(dirTo))
+        Thread.sleep(eventsRetrievalDelay)
+
+        // then
+        filesFound = userAPI.searchWord("august")
+        assertEquals(1, filesFound.size)
+        assertEquals("$dirTo/$level2DirName/$nestedFileName", filesFound[0])
+        filesFound = userAPI.searchWord("january")
+        assertEquals(1, filesFound.size)
+        assertEquals("$dirTo/simpleFile1.txt", filesFound[0])
+        filesFound = userAPI.searchWord("devils")
+        assertEquals(3, filesFound.size)
+        assertAll(
+            { filesFound.contains("$dirTo/simpleFile1.txt") },
+            { filesFound.contains("$dirTo/englishWords1.txt") },
+            { filesFound.contains("$dirTo/englishWords2.txt") }
+        )
+    }
+
     @AfterEach
     fun removeFilesAndDirs() {
         FileSystemUtils.deleteRecursively(Paths.get(tmpDir))
