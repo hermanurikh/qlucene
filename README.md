@@ -2,6 +2,12 @@
 
 An in-house engine to index and search for terms in given files.
 
+### Supported and tested file formats
+* .txt
+* .kt
+* .java
+* .properties
+
 ### Good to know
 * Background monitoring is made with built-in Java library, where events come with delay up to a minute. Therefore:
     * please allow for up to a minute between modifying contents of monitored files and checking the visibility in index

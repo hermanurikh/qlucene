@@ -172,4 +172,22 @@ class IndexAdditionTest {
             { filesFound.contains("$rootDir2/simpleFile3.txt") }
         )
     }
+
+    @Test
+    fun `searching for a term should list files ordered by number of term occurrences`() {
+        // given
+        var filesFound = userAPI.searchWord("april")
+        assertTrue(filesFound.isEmpty())
+
+        // when
+        userAPI.addToIndex(rootDir3)
+
+        // then
+        filesFound = userAPI.searchWord("april")
+        System.out.println(filesFound)
+        assertEquals(3, filesFound.size)
+        assertEquals("$rootDir3/file3.txt", filesFound[0])
+        assertEquals("$rootDir3/file1.txt", filesFound[1])
+        assertEquals("$rootDir3/file2.txt", filesFound[2])
+    }
 }
