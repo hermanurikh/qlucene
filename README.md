@@ -32,10 +32,21 @@ changes get propagated to index;
 * JDK 11+
 
 ### How do I run it?
-* [Preferred way] Just run a `QLuceneApplication::main` function from your favorite IDE~~A~~ and that should be it
-* [CI way] 
-    * *nix: `./gradlew build` and `java -jar build/libs/qlucene-0.0.1-SNAPSHOT.jar`
-    * Windows: `gradlew.bat build` and `java -jar build/libs/qlucene-0.0.1-SNAPSHOT.jar`
+#### Preferred way - IDE
+Just run a `QLuceneApplication::main` function from your favorite IDE~~A~~ and that should be it.
+#### CI way
+#####  For *nix
+ ```
+ ./gradlew build
+java -jar build/libs/qlucene-0.0.1-SNAPSHOT.jar
+```
+#####  Windows
+```
+gradlew.bat build
+java -jar build/libs/qlucene-0.0.1-SNAPSHOT.jar
+```
+    
+> Make sure you have JDK 11 or higher on path to build the application.
     
 ### How do I use it?
 `UserAPI.kt` has the API exposed via REST. You can check there for exact input parameters which are expected. 
