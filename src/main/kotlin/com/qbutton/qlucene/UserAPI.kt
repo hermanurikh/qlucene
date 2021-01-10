@@ -30,9 +30,9 @@ class UserAPI @Autowired constructor(
     /**
      * E.g.
      *  - add a single file:
-     *      curl --data "path=src/test/resources/rootdir/nesteddir/simpleFile2.txt" http://localhost:8077/add/
+     *      curl --data "path=src/test/resources/testfiles/rootdir/nesteddir/simpleFile2.txt" http://localhost:8077/add/
      *  - add a directory (recursively, with subdirectories):
-     *      curl --data "path=src/test/resources/rootdir" http://localhost:8077/add/
+     *      curl --data "path=src/test/resources/testfiles" http://localhost:8077/add/
      */
     @PostMapping("/add/")
     fun addToIndex(@RequestParam path: String): RegistrationResult {

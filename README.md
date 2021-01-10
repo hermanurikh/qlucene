@@ -6,7 +6,12 @@ An in-house engine to index and search for terms in given files.
 
 - [What is QLucene?](#what-is-qlucene)
 - [System requirements](#system-requirements)
-- [How do I run it?](#what-is-qlucene)
+- [How do I run it?](#how-do-i-run-it)
+- [How do I use it?](#how-do-i-use-it)
+    - [File addition to index](#1-file-addition-to-index)
+    - [Directory addition to index](#2-directory-addition-to-index)
+    - [Searching for files containing given word](#3-searching-for-files-containing-given-word)
+    - [Searching for files containing given sentence](#4-searching-for-files-containing-given-sentence)
 - [Supported file formats](#supported-and-tested-file-formats)
 - [Good to know](#good-to-know)
 
@@ -31,7 +36,62 @@ changes get propagated to index;
 * [CI way] 
     * *nix: `./gradlew build` and `java -jar build/libs/qlucene-0.0.1-SNAPSHOT.jar`
     * Windows: `gradlew.bat build` and `java -jar build/libs/qlucene-0.0.1-SNAPSHOT.jar`
+    
+### How do I use it?
+`UserAPI.kt` has the API exposed via REST. You can check there for exact input parameters which are expected. 
 
+Below are some examples.
+#### 1. File addition to index
+Hit the POST `/add/` endpoint with request parameter `path` set to necessary file URI to add. 
+
+Example for MacOS:
+
+<small>Request:</small>
+```
+curl --data "path=src/test/resources/testfiles/rootdir/nesteddir/simpleFile2.txt" http://localhost:8077/add/
+```
+<small>Response:</small>
+```
+{"message":"Successfully registered file: src/test/resources/testfiles/rootdir/nesteddir/simpleFile2.txt"}
+```
+#### 2. Directory addition to index
+The same as above, just specify the parameter `path` to point to a valid directory.
+
+Example for MacOS:
+
+<small>Request:</small>
+```
+curl --data "path=src/test/resources/testfiles" http://localhost:8077/add/
+```
+<small>Response:</small>
+```
+{"message":"Successfully registered directory: src/test/resources/testfiles"}
+```
+#### 3. Searching for files containing given word 
+Hit the GET `/search/word/{token}` endpoint, where `{token}` is the desired word.
+
+Example for MacOS:
+
+<small>Request:</small>
+```
+curl -i http://localhost:8077/search/word/august
+```
+<small>Response:</small>
+```
+["src/test/resources/testfiles/rootdir2/simpleFile3.txt","src/test/resources/testfiles/rootdir/nesteddir/simpleFile2.txt"]
+```
+#### 4. Searching for files containing given sentence
+Hit the GET `/search/sentence/{token}` endpoint, where `{token}` is the desired sentence. Make sure that it is properly encoded as part of URL.
+Example for MacOS:
+
+<small>Request:</small>
+```
+curl -i http://localhost:8077/search/sentence/Simple%20sentence%202...
+```
+<small>Response:</small>
+```
+["src/test/resources/testfiles/rootdir/nesteddir/simpleFile2.txt"]
+```
 ### Supported and tested file formats
 * .txt
 * .kt
