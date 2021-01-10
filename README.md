@@ -12,6 +12,7 @@ An in-house engine to index and search for terms in given files.
     - [Directory addition to index](#2-directory-addition-to-index)
     - [Searching for files containing given word](#3-searching-for-files-containing-given-word)
     - [Searching for files containing given sentence](#4-searching-for-files-containing-given-sentence)
+- [High-level system design diagram](#high-level-system-design-diagrams)    
 - [Supported file formats](#supported-and-tested-file-formats)
 - [Good to know](#good-to-know)
 
@@ -106,6 +107,12 @@ curl -i http://localhost:8077/search/sentence/Simple%20sentence%202...
 ```
 ["src/test/resources/testfiles/rootdir/nesteddir/simpleFile2.txt"]
 ```
+### High-level system design diagrams
+Read (searching) flow
+![alt text](drawings/ReadAPI.png)
+Write (indexing and re-indexing) flow
+![alt text](drawings/Write%20API.png)
+
 ### Supported and tested file formats
 * `.txt`
 * `.kt`
