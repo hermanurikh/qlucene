@@ -2,6 +2,15 @@
 
 An in-house engine to index and search for terms in given files.
 
+### Table of contents
+
+- [System requirements](#system-requirements)
+- [Supported file formats](#supported-and-tested-file-formats)
+- [Good to know](#good-to-know)
+
+### System requirements
+* JDK 11+
+
 ### Supported and tested file formats
 * .txt
 * .kt
