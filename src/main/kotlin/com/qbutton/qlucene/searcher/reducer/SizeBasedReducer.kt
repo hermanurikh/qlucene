@@ -29,6 +29,6 @@ class SizeBasedReducer @Autowired constructor(
             }
         }
 
-        return heap.toMutableList().sortedWith(ranker)
+        return heap.toList().sortedWith(ranker)
     }
 }

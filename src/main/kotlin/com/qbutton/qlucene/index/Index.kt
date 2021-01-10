@@ -26,6 +26,7 @@ abstract class Index : Executable, Resettable {
     fun find(term: Term): Set<DocumentSearchResult> {
         return storage[term]
             ?.entries
+            // map and then filter, not vice versa - or we may get entries updated by other thread after filtering
             ?.map { DocumentSearchResult(it.key, it.value) }
             ?.filter { it.termOccurrences > 0 }
             ?.toSet() ?: emptySet()

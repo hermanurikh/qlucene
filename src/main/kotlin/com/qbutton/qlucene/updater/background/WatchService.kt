@@ -75,34 +75,38 @@ class WatchService @Autowired constructor(
             locker.lockId(dirId)
             val currValue = monitoredFiles[dirId]
             if (shouldBeCompletelyMonitored) {
-                return if (currValue != null && currValue.isMonitoredCompletely) {
+                return when {
                     // if we need complete monitoring and mapping is there and already complete, do nothing
-                    DirectoryAlreadyRegistered(path)
-                } else if (currValue == null) {
+                    currValue != null && currValue.isMonitoredCompletely -> DirectoryAlreadyRegistered(path)
                     // if we need complete monitoring and mapping is not there, put value and attach watcher
-                    monitoredFiles[dirId] = FileMonitorState(isDirectory = true, isMonitoredCompletely = true)
-                    backgroundEventsPublisher.attachWatcher(path)
-                    DirectoryRegistrationSuccessful(path)
-                } else {
-                    // if we need complete monitoring and current is non-complete, update value and remove specific mappings
-                    monitoredFiles[dirId] = FileMonitorState(isDirectory = true, isMonitoredCompletely = true)
-                    backgroundEventsPublisher.clearFilteredFiles(path)
-                    DirectoryRegistrationSuccessful(path)
+                    currValue == null -> {
+                        monitoredFiles[dirId] = FileMonitorState(isDirectory = true, isMonitoredCompletely = true)
+                        backgroundEventsPublisher.attachWatcher(path)
+                        DirectoryRegistrationSuccessful(path)
+                    }
+                    else -> {
+                        // if we need complete monitoring and current is non-complete, update value and remove specific mappings
+                        monitoredFiles[dirId] = FileMonitorState(isDirectory = true, isMonitoredCompletely = true)
+                        backgroundEventsPublisher.clearFilteredFiles(path)
+                        DirectoryRegistrationSuccessful(path)
+                    }
                 }
             } else {
-                return if (currValue != null && currValue.isMonitoredCompletely) {
+                return when {
                     // if we don't need complete monitoring, but it is already complete, do nothing
-                    DirectoryAlreadyRegistered(path)
-                } else if (currValue == null) {
+                    currValue != null && currValue.isMonitoredCompletely -> DirectoryAlreadyRegistered(path)
                     // if we need incomplete monitoring and mapping is not there, put value, attach watcher and add files
-                    monitoredFiles[dirId] = FileMonitorState(isDirectory = true, isMonitoredCompletely = false)
-                    backgroundEventsPublisher.updateFilteredFiles(path, fileToMonitor!!)
-                    backgroundEventsPublisher.attachWatcher(path)
-                    DirectoryRegistrationSuccessful(path)
-                } else {
-                    // if we need incomplete monitoring and current is non-complete, update specific mapping
-                    backgroundEventsPublisher.updateFilteredFiles(path, fileToMonitor!!)
-                    DirectoryAlreadyRegistered(path)
+                    currValue == null -> {
+                        monitoredFiles[dirId] = FileMonitorState(isDirectory = true, isMonitoredCompletely = false)
+                        backgroundEventsPublisher.updateFilteredFiles(path, fileToMonitor!!)
+                        backgroundEventsPublisher.attachWatcher(path)
+                        DirectoryRegistrationSuccessful(path)
+                    }
+                    else -> {
+                        // if we need incomplete monitoring and current is non-complete, update specific mapping
+                        backgroundEventsPublisher.updateFilteredFiles(path, fileToMonitor!!)
+                        DirectoryAlreadyRegistered(path)
+                    }
                 }
             }
         } finally {

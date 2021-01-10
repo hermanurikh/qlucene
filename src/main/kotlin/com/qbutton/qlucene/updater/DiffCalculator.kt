@@ -18,7 +18,7 @@ class DiffCalculator {
 
         val diffCalculationResults = mutableListOf<DiffCalculationResult>()
 
-        val oldTokensGrouped = oldTokens.groupingBy { it }.eachCount().toMutableMap()
+        val oldTokensGrouped = oldTokens.groupingBy { it }.eachCount().toMap()
         val newTokensGrouped = newTokens.groupingBy { it }.eachCount().toMutableMap()
 
         oldTokensGrouped.forEach { (token, count) ->
