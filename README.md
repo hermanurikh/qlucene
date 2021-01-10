@@ -111,7 +111,7 @@ curl -i http://localhost:8077/search/sentence/Simple%20sentence%202...
 Read (searching) flow
 ![alt text](drawings/ReadAPI.png)
 Write (indexing and re-indexing) flow
-![alt text](drawings/Write%20API.png)
+![alt text](drawings/WriteAPI.png)
 
 ### Supported and tested file formats
 * `.txt`
