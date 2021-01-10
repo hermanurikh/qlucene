@@ -209,6 +209,6 @@ class IndexAdditionTest {
 
         // then
         filesFound = userAPI.searchWord("december")
-        assertEquals(maxOutputSize, filesFound.size)
+        assertTrue(filesFound.size <= maxOutputSize)
     }
 }
