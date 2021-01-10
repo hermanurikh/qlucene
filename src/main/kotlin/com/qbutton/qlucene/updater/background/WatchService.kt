@@ -10,6 +10,7 @@ import com.qbutton.qlucene.dto.DirectoryUnregistrationSuccessful
 import com.qbutton.qlucene.dto.FileAlreadyRegistered
 import com.qbutton.qlucene.dto.FileMonitorState
 import com.qbutton.qlucene.dto.FileRegistrationSuccessful
+import com.qbutton.qlucene.dto.FileSizeExceedsLimits
 import com.qbutton.qlucene.dto.FileUnregistrationSuccessful
 import com.qbutton.qlucene.dto.NotRegistered
 import com.qbutton.qlucene.dto.RegistrationResult
@@ -41,7 +42,9 @@ class WatchService @Autowired constructor(
     @Value("\${directory.index.max-depth}")
     private val maxDepth: Int,
     @Value("\${indexed-contents.root-dir}")
-    private val storageIndexDir: String
+    private val storageIndexDir: String,
+    @Value("\${file.max-indexed-size}")
+    private val maxFileSize: Long
 ) : Resettable {
     // stores mapping between currently monitored dir/file and state (monitored recursively or one-level). See class doc.
     private val monitoredFiles = ConcurrentHashMap<String, FileMonitorState>()
@@ -147,6 +150,9 @@ class WatchService @Autowired constructor(
     }
 
     fun registerFile(path: String): RegistrationResult {
+        if (Files.size(Paths.get(path)) > maxFileSize) {
+            return FileSizeExceedsLimits(path)
+        }
         val fileId = fileIdConverter.toId(path)
         try {
             locker.lockId(fileId)

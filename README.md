@@ -28,6 +28,9 @@ also being tracked - with a limitation of depth configurable by `directory.index
 changes get propagated to index;
 * concurrent searches/updates are supported.
 
+As for non-functional limitations, files up to 10 MB in size will be indexed. Maximum number of simultaneously monitored files
+depends on inotify limit. 
+
 ### System requirements
 * JDK 11+
 
@@ -104,10 +107,10 @@ curl -i http://localhost:8077/search/sentence/Simple%20sentence%202...
 ["src/test/resources/testfiles/rootdir/nesteddir/simpleFile2.txt"]
 ```
 ### Supported and tested file formats
-* .txt
-* .kt
-* .java
-* .properties
+* `.txt`
+* `.kt`
+* `.java`
+* `.properties`
 
 ### Good to know
 * Background monitoring is made with built-in Java library, where events come with delay up to a minute. Therefore:

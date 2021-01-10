@@ -1,6 +1,7 @@
 package com.qbutton.qlucene.integration
 
 import com.qbutton.qlucene.UserAPI
+import com.qbutton.qlucene.dto.FileSizeExceedsLimits
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -210,5 +211,20 @@ class IndexAdditionTest {
         // then
         filesFound = userAPI.searchWord("december")
         assertTrue(filesFound.size <= maxOutputSize)
+    }
+
+    @Test
+    fun `adding file which exceeds configured limits will not result in indexing`() {
+        // given
+        var filesFound = userAPI.searchWord("zoo")
+        assertTrue(filesFound.isEmpty())
+
+        // when
+        val additionResult = userAPI.addToIndex("$rootDir${fileSeparator}$bigFileName")
+
+        // then
+        assertTrue(additionResult is FileSizeExceedsLimits)
+        filesFound = userAPI.searchWord("zoo")
+        assertTrue(filesFound.isEmpty())
     }
 }

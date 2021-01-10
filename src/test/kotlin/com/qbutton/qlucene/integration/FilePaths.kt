@@ -8,6 +8,7 @@ const val rootDir3Name = "rootdir3"
 const val rootDir4Name = "rootdir4"
 const val nestedDirName = "nesteddir"
 const val nestedFileName = "simpleFile2.txt"
+const val bigFileName = "tooBigFile.txt"
 const val tmpDir = "tmp-test"
 
 val fileSeparator = File.separator!!
