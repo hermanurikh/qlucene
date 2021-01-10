@@ -1,6 +1,7 @@
 package com.qbutton.qlucene.integration.background
 
 import com.qbutton.qlucene.UserAPI
+import com.qbutton.qlucene.integration.fileSeparator
 import com.qbutton.qlucene.integration.nestedFile
 import com.qbutton.qlucene.integration.nestedFileName
 import com.qbutton.qlucene.integration.tmpDir
@@ -27,7 +28,7 @@ class ComplicatedScenariosTest {
     @Autowired
     private lateinit var userAPI: UserAPI
 
-    private val fileToMonitor = "$tmpTestNestedDir/$nestedFileName"
+    private val fileToMonitor = "$tmpTestNestedDir${fileSeparator}$nestedFileName"
 
     @BeforeEach
     fun createDirs() {

@@ -1,6 +1,7 @@
 package com.qbutton.qlucene.integration.background
 
 import com.qbutton.qlucene.UserAPI
+import com.qbutton.qlucene.integration.fileSeparator
 import com.qbutton.qlucene.integration.nestedDirName
 import com.qbutton.qlucene.integration.nestedFile
 import com.qbutton.qlucene.integration.nestedFileName
@@ -44,7 +45,7 @@ class FilesAdditionTest {
         var filesFound = userAPI.searchWord("august")
         assertTrue(filesFound.isEmpty())
         val fileFrom = nestedFile
-        val fileTo = "$tmpTestDir/$nestedFileName"
+        val fileTo = "$tmpTestDir${fileSeparator}$nestedFileName"
 
         // when
         Files.copy(Paths.get(fileFrom), Paths.get(fileTo))
@@ -63,7 +64,7 @@ class FilesAdditionTest {
         var filesFound = userAPI.searchWord("august")
         assertTrue(filesFound.isEmpty())
         val fileFrom = nestedFile
-        val fileTo = "$tmpTestNestedDir/$nestedFileName"
+        val fileTo = "$tmpTestNestedDir${fileSeparator}$nestedFileName"
 
         // when
         Files.copy(Paths.get(fileFrom), Paths.get(fileTo))
@@ -79,7 +80,7 @@ class FilesAdditionTest {
     fun `when dir is monitored, adding a dir to it with several files should add all of them to index`() {
         // given
         val dirFrom = rootDir
-        val dirTo = "$tmpTestNestedDir/innerDir"
+        val dirTo = "$tmpTestNestedDir${fileSeparator}innerDir"
         userAPI.addToIndex(tmpTestNestedDir)
         var filesFound = userAPI.searchWord("august")
         assertTrue(filesFound.isEmpty())
@@ -91,16 +92,16 @@ class FilesAdditionTest {
         // then
         filesFound = userAPI.searchWord("august")
         assertEquals(1, filesFound.size)
-        assertEquals("$dirTo/$nestedDirName/$nestedFileName", filesFound[0])
+        assertEquals("$dirTo${fileSeparator}$nestedDirName${fileSeparator}$nestedFileName", filesFound[0])
         filesFound = userAPI.searchWord("january")
         assertEquals(1, filesFound.size)
-        assertEquals("$dirTo/simpleFile1.txt", filesFound[0])
+        assertEquals("$dirTo${fileSeparator}simpleFile1.txt", filesFound[0])
         filesFound = userAPI.searchWord("devils")
         assertEquals(3, filesFound.size)
         assertAll(
-            { filesFound.contains("$dirTo/simpleFile1.txt") },
-            { filesFound.contains("$dirTo/englishWords1.txt") },
-            { filesFound.contains("$dirTo/englishWords2.txt") }
+            { filesFound.contains("$dirTo${fileSeparator}simpleFile1.txt") },
+            { filesFound.contains("$dirTo${fileSeparator}englishWords1.txt") },
+            { filesFound.contains("$dirTo${fileSeparator}englishWords2.txt") }
         )
     }
 
@@ -108,7 +109,7 @@ class FilesAdditionTest {
     fun `when dir is monitored, adding a dir to nested internal dir with several files should add all of them to index`() {
         // given
         val dirFrom = rootDir
-        val dirTo = "$tmpTestNestedDir/innerDir"
+        val dirTo = "$tmpTestNestedDir${fileSeparator}innerDir"
         userAPI.addToIndex(tmpTestDir)
         var filesFound = userAPI.searchWord("august")
         assertTrue(filesFound.isEmpty())
@@ -120,16 +121,16 @@ class FilesAdditionTest {
         // then
         filesFound = userAPI.searchWord("august")
         assertEquals(1, filesFound.size)
-        assertEquals("$dirTo/$nestedDirName/$nestedFileName", filesFound[0])
+        assertEquals("$dirTo${fileSeparator}$nestedDirName/$nestedFileName", filesFound[0])
         filesFound = userAPI.searchWord("january")
         assertEquals(1, filesFound.size)
-        assertEquals("$dirTo/simpleFile1.txt", filesFound[0])
+        assertEquals("$dirTo${fileSeparator}simpleFile1.txt", filesFound[0])
         filesFound = userAPI.searchWord("devils")
         assertEquals(3, filesFound.size)
         assertAll(
-            { filesFound.contains("$dirTo/simpleFile1.txt") },
-            { filesFound.contains("$dirTo/englishWords1.txt") },
-            { filesFound.contains("$dirTo/englishWords2.txt") }
+            { filesFound.contains("$dirTo${fileSeparator}simpleFile1.txt") },
+            { filesFound.contains("$dirTo${fileSeparator}englishWords1.txt") },
+            { filesFound.contains("$dirTo${fileSeparator}englishWords2.txt") }
         )
     }
 

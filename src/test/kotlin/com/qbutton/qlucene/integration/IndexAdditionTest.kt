@@ -103,7 +103,7 @@ class IndexAdditionTest {
         assertEquals(nestedFile, filesFound[0])
         filesFound = userAPI.searchWord("january")
         assertEquals(1, filesFound.size)
-        assertEquals("$rootDir/simpleFile1.txt", filesFound[0])
+        assertEquals("$rootDir${fileSeparator}simpleFile1.txt", filesFound[0])
     }
 
     @Test
@@ -134,13 +134,13 @@ class IndexAdditionTest {
         assertEquals(nestedFile, filesFound[0])
         filesFound = userAPI.searchWord("january")
         assertEquals(1, filesFound.size)
-        assertEquals("$rootDir/simpleFile1.txt", filesFound[0])
+        assertEquals("$rootDir${fileSeparator}simpleFile1.txt", filesFound[0])
         filesFound = userAPI.searchWord("devils")
         assertEquals(3, filesFound.size)
         assertAll(
-            { filesFound.contains("$rootDir/simpleFile1.txt") },
-            { filesFound.contains("$rootDir/englishWords1.txt") },
-            { filesFound.contains("$rootDir/englishWords2.txt") }
+            { filesFound.contains("$rootDir${fileSeparator}simpleFile1.txt") },
+            { filesFound.contains("$rootDir${fileSeparator}englishWords1.txt") },
+            { filesFound.contains("$rootDir${fileSeparator}englishWords2.txt") }
         )
     }
 
@@ -161,23 +161,23 @@ class IndexAdditionTest {
         // then
         filesFound = userAPI.searchWord("word3")
         assertEquals(1, filesFound.size)
-        assertEquals("$rootDir2/simpleFile3.txt", filesFound[0])
+        assertEquals("$rootDir2${fileSeparator}simpleFile3.txt", filesFound[0])
         filesFound = userAPI.searchWord("august")
         assertEquals(2, filesFound.size)
         assertAll(
             { filesFound.contains(nestedFile) },
-            { filesFound.contains("$rootDir2/simpleFile3.txt") }
+            { filesFound.contains("$rootDir2${fileSeparator}simpleFile3.txt") }
         )
         filesFound = userAPI.searchWord("january")
         assertEquals(1, filesFound.size)
-        assertEquals("$rootDir/simpleFile1.txt", filesFound[0])
+        assertEquals("$rootDir${fileSeparator}simpleFile1.txt", filesFound[0])
         filesFound = userAPI.searchWord("devils")
         assertEquals(4, filesFound.size)
         assertAll(
-            { filesFound.contains("$rootDir/simpleFile1.txt") },
-            { filesFound.contains("$rootDir/englishWords1.txt") },
-            { filesFound.contains("$rootDir/englishWords2.txt") },
-            { filesFound.contains("$rootDir2/simpleFile3.txt") }
+            { filesFound.contains("$rootDir${fileSeparator}simpleFile1.txt") },
+            { filesFound.contains("$rootDir${fileSeparator}englishWords1.txt") },
+            { filesFound.contains("$rootDir${fileSeparator}englishWords2.txt") },
+            { filesFound.contains("$rootDir2${fileSeparator}simpleFile3.txt") }
         )
     }
 
@@ -193,9 +193,9 @@ class IndexAdditionTest {
         // then
         filesFound = userAPI.searchWord("april")
         assertEquals(3, filesFound.size)
-        assertEquals("$rootDir3/file3.txt", filesFound[0])
-        assertEquals("$rootDir3/file1.txt", filesFound[1])
-        assertEquals("$rootDir3/file2.txt", filesFound[2])
+        assertEquals("$rootDir3${fileSeparator}file3.txt", filesFound[0])
+        assertEquals("$rootDir3${fileSeparator}file1.txt", filesFound[1])
+        assertEquals("$rootDir3${fileSeparator}file2.txt", filesFound[2])
     }
 
     @Test

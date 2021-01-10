@@ -1,6 +1,7 @@
 package com.qbutton.qlucene.integration.background
 
 import com.qbutton.qlucene.UserAPI
+import com.qbutton.qlucene.integration.fileSeparator
 import com.qbutton.qlucene.integration.nestedFile
 import com.qbutton.qlucene.integration.nestedFileName
 import com.qbutton.qlucene.integration.tmpDir
@@ -23,7 +24,7 @@ import java.nio.file.Paths
 @SpringBootTest
 class FilesDeletionTest {
 
-    private val fileToDeletePath = "$tmpTestNestedDir/$nestedFileName"
+    private val fileToDeletePath = "$tmpTestNestedDir${fileSeparator}$nestedFileName"
 
     @Autowired
     private lateinit var userAPI: UserAPI
