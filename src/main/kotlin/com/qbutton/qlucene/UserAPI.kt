@@ -58,7 +58,7 @@ class UserAPI @Autowired constructor(
     fun searchWord(@PathVariable token: String) = searchFacade.search(Word(token))
     /**
      * E.g.
-     * curl -i http://localhost:8077/search/sentence/test
+     * curl -i http://localhost:8077/search/sentence/Simple%20sentence%202...
      */
     @GetMapping("/search/sentence/{token}")
     fun searchSentence(@PathVariable token: String) = searchFacade.search(Sentence(token))

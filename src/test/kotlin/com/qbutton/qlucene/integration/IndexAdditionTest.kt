@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertAll
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 
 /**
@@ -17,6 +18,9 @@ class IndexAdditionTest {
 
     @Autowired
     private lateinit var userAPI: UserAPI
+
+    @Value("\${reducer.size-based.max-size}")
+    private var maxOutputSize: Int = 0
 
     @BeforeEach
     fun clearState() {
@@ -40,6 +44,10 @@ class IndexAdditionTest {
 
         filesFound = userAPI.searchWord("january")
         assertTrue(filesFound.isEmpty())
+
+        filesFound = userAPI.searchSentence("Simple sentence 2...")
+        assertEquals(1, filesFound.size)
+        assertEquals(filePath, filesFound[0])
     }
 
     @Test
@@ -184,10 +192,23 @@ class IndexAdditionTest {
 
         // then
         filesFound = userAPI.searchWord("april")
-        System.out.println(filesFound)
         assertEquals(3, filesFound.size)
         assertEquals("$rootDir3/file3.txt", filesFound[0])
         assertEquals("$rootDir3/file1.txt", filesFound[1])
         assertEquals("$rootDir3/file2.txt", filesFound[2])
+    }
+
+    @Test
+    fun `searching for a term should output limited number of documents`() {
+        // given
+        var filesFound = userAPI.searchWord("december")
+        assertTrue(filesFound.isEmpty())
+
+        // when
+        userAPI.addToIndex(rootDir4)
+
+        // then
+        filesFound = userAPI.searchWord("december")
+        assertEquals(maxOutputSize, filesFound.size)
     }
 }
