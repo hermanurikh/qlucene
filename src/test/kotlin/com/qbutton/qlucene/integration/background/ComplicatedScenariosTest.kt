@@ -4,6 +4,7 @@ import com.qbutton.qlucene.UserAPI
 import com.qbutton.qlucene.integration.nestedFile
 import com.qbutton.qlucene.integration.nestedFileName
 import com.qbutton.qlucene.integration.tmpDir
+import com.qbutton.qlucene.integration.tmpTestDir
 import com.qbutton.qlucene.integration.tmpTestNestedDir
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -47,6 +48,27 @@ class ComplicatedScenariosTest {
         assertTrue(filesFound.isEmpty())
 
         // when [we add it back]
+        Files.copy(Paths.get(nestedFile), Paths.get(fileToMonitor))
+        Thread.sleep(eventsRetrievalDelay)
+
+        // then [contents should be there again]
+        filesFound = userAPI.searchWord("august")
+        assertEquals(1, filesFound.size)
+        assertEquals(fileToMonitor, filesFound[0])
+    }
+
+    @Test
+    fun `when a file is deleted as a part of dir, and then added back, its contents are properly re-indexed`() {
+        // given [file was indexed as a part of dir, then dir has been deleted]
+        ensureFileIsSearchable(tmpTestDir)
+        val enclosingDir = Paths.get(tmpTestNestedDir)
+        FileSystemUtils.deleteRecursively(enclosingDir)
+        Thread.sleep(eventsRetrievalDelay)
+        var filesFound = userAPI.searchWord("august")
+        assertTrue(filesFound.isEmpty())
+
+        // when [we add directory and file back]
+        Files.createDirectories(enclosingDir)
         Files.copy(Paths.get(nestedFile), Paths.get(fileToMonitor))
         Thread.sleep(eventsRetrievalDelay)
 

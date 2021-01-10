@@ -135,4 +135,41 @@ class IndexAdditionTest {
             { filesFound.contains("$rootDir/englishWords2.txt") }
         )
     }
+
+    @Test
+    fun `adding multiple unrelated directories should add all of them to index`() {
+        // given
+        var filesFound = userAPI.searchWord("august")
+        assertTrue(filesFound.isEmpty())
+        filesFound = userAPI.searchWord("january")
+        assertTrue(filesFound.isEmpty())
+        filesFound = userAPI.searchWord("devils")
+        assertTrue(filesFound.isEmpty())
+
+        // when
+        userAPI.addToIndex(rootDir)
+        userAPI.addToIndex(rootDir2)
+
+        // then
+        filesFound = userAPI.searchWord("word3")
+        assertEquals(1, filesFound.size)
+        assertEquals("$rootDir2/simpleFile3.txt", filesFound[0])
+        filesFound = userAPI.searchWord("august")
+        assertEquals(2, filesFound.size)
+        assertAll(
+            { filesFound.contains(nestedFile) },
+            { filesFound.contains("$rootDir2/simpleFile3.txt") }
+        )
+        filesFound = userAPI.searchWord("january")
+        assertEquals(1, filesFound.size)
+        assertEquals("$rootDir/simpleFile1.txt", filesFound[0])
+        filesFound = userAPI.searchWord("devils")
+        assertEquals(4, filesFound.size)
+        assertAll(
+            { filesFound.contains("$rootDir/simpleFile1.txt") },
+            { filesFound.contains("$rootDir/englishWords1.txt") },
+            { filesFound.contains("$rootDir/englishWords2.txt") },
+            { filesFound.contains("$rootDir2/simpleFile3.txt") }
+        )
+    }
 }
