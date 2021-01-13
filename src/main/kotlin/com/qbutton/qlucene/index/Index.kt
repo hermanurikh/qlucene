@@ -18,13 +18,16 @@ import java.util.concurrent.ConcurrentHashMap
  * which provides in-memory or filesystem dispatching out-of-the-box.
  */
 abstract class Index : Executable, Resettable {
-    private val storage = ConcurrentHashMap<Term, ConcurrentHashMap<String, Int>>()
+    // main index -> mapping of Term to a map of [file id -> number of occurrences in file]
+    private val index = ConcurrentHashMap<Term, ConcurrentHashMap<String, Int>>()
+    // reverse index -> mapping of file id to a list of terms it contains
+    private val reverseIndex = ConcurrentHashMap<String, Map<Term, Int>>()
 
     /**
      * Searches for given term.
      */
     fun find(term: Term): Set<DocumentSearchResult> {
-        return storage[term]
+        return index[term]
             ?.entries
             // map and then filter, not vice versa - or we may get entries updated by other thread after filtering
             ?.map { DocumentSearchResult(it.key, it.value) }
@@ -32,13 +35,20 @@ abstract class Index : Executable, Resettable {
             ?.toSet() ?: emptySet()
     }
 
+    fun findByDocId(fileId: String) = reverseIndex[fileId] ?: emptyMap()
+
+    fun updateReverseIndex(fileId: String, terms: Map<Term, Int>) {
+        reverseIndex[fileId] = terms
+    }
+
     fun update(updateInfo: UpdateIndexInput) {
-        val termMap = storage.computeIfAbsent(updateInfo.term) { ConcurrentHashMap() }
+        val termMap = index.computeIfAbsent(updateInfo.term) { ConcurrentHashMap() }
         val delta = if (updateInfo.operation == Operation.CREATE) updateInfo.count else -updateInfo.count
         termMap.merge(updateInfo.fileId, delta, Integer::sum)
     }
 
     override fun resetState() {
-        storage.clear()
+        index.clear()
+        reverseIndex.clear()
     }
 }

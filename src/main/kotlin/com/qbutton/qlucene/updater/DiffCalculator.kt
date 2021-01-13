@@ -14,14 +14,13 @@ import org.springframework.stereotype.Component
  */
 @Component
 class DiffCalculator {
-    fun getDiff(oldTokens: List<Term>, newTokens: List<Term>): List<DiffCalculationResult> {
+    fun getDiff(oldTokens: Map<Term, Int>, newTokens: Map<Term, Int>): List<DiffCalculationResult> {
 
         val diffCalculationResults = mutableListOf<DiffCalculationResult>()
 
-        val oldTokensGrouped = oldTokens.groupingBy { it }.eachCount().toMap()
-        val newTokensGrouped = newTokens.groupingBy { it }.eachCount().toMutableMap()
+        val newTokensGrouped = newTokens.toMutableMap()
 
-        oldTokensGrouped.forEach { (token, count) ->
+        oldTokens.forEach { (token, count) ->
             val updatedTokenCount = newTokensGrouped[token] ?: 0
             when {
                 count > updatedTokenCount -> {

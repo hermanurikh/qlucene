@@ -11,17 +11,17 @@ A tokenizer which will break text based on Java's {@code BreakIterator}.
  */
 abstract class BreakIteratorTokenizer : Tokenizer() {
 
-    override fun tokenize(rawText: String): List<Term> {
+    override fun tokenize(rawText: String): Map<Term, Int> {
         val iterator = getBreakIterator()
         iterator.setText(rawText)
-        val words = mutableListOf<Term>()
+        val words = mutableMapOf<Term, Int>()
         var start = iterator.first()
 
         var end = iterator.next()
         while (end != BreakIterator.DONE) {
             val element = rawText.substring(start, end).trim()
             if (element.isNotBlank() && Character.isLetter(element.codePointAt(0))) {
-                words.add(toTerm(element))
+                words.merge(toTerm(element), 1) { oldValue, _ -> oldValue + 1 }
             }
             start = end
             end = iterator.next()

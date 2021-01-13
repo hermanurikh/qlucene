@@ -2,6 +2,7 @@ package com.qbutton.qlucene.updater
 
 import com.qbutton.qlucene.dto.DiffCalculationResult
 import com.qbutton.qlucene.dto.Operation
+import com.qbutton.qlucene.dto.Term
 import com.qbutton.qlucene.dto.Word
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -13,8 +14,8 @@ internal class DiffCalculatorTest {
     @Test
     fun `getDiff should notice added tokens to end`() {
         // given
-        val oldTokens = listOf("1", "2", "3").toWordsList()
-        val newTokens = listOf("1", "2", "3", "4").toWordsList()
+        val oldTokens = listOf("1", "2", "3").toTermsMap()
+        val newTokens = listOf("1", "2", "3", "4").toTermsMap()
 
         // when
         val diff = diffCalculator.getDiff(oldTokens, newTokens)
@@ -30,8 +31,8 @@ internal class DiffCalculatorTest {
     @Test
     fun `getDiff should notice added tokens to middle`() {
         // given
-        val oldTokens = listOf("1", "2", "3").toWordsList()
-        val newTokens = listOf("1", "2", "4", "3").toWordsList()
+        val oldTokens = listOf("1", "2", "3").toTermsMap()
+        val newTokens = listOf("1", "2", "4", "3").toTermsMap()
 
         // when
         val diff = diffCalculator.getDiff(oldTokens, newTokens)
@@ -47,8 +48,8 @@ internal class DiffCalculatorTest {
     @Test
     fun `getDiff should notice added tokens to front`() {
         // given
-        val oldTokens = listOf("1", "2", "3").toWordsList()
-        val newTokens = listOf("0", "1", "2", "3").toWordsList()
+        val oldTokens = listOf("1", "2", "3").toTermsMap()
+        val newTokens = listOf("0", "1", "2", "3").toTermsMap()
 
         // when
         val diff = diffCalculator.getDiff(oldTokens, newTokens)
@@ -64,8 +65,8 @@ internal class DiffCalculatorTest {
     @Test
     fun `getDiff should aggregate added tokens`() {
         // given
-        val oldTokens = listOf("1", "2", "3").toWordsList()
-        val newTokens = listOf("0", "1", "2", "3", "0", "0").toWordsList()
+        val oldTokens = listOf("1", "2", "3").toTermsMap()
+        val newTokens = listOf("0", "1", "2", "3", "0", "0").toTermsMap()
 
         // when
         val diff = diffCalculator.getDiff(oldTokens, newTokens)
@@ -81,8 +82,8 @@ internal class DiffCalculatorTest {
     @Test
     fun `getDiff should notice deleted tokens from end`() {
         // given
-        val oldTokens = listOf("1", "2", "3").toWordsList()
-        val newTokens = listOf("1", "2").toWordsList()
+        val oldTokens = listOf("1", "2", "3").toTermsMap()
+        val newTokens = listOf("1", "2").toTermsMap()
 
         // when
         val diff = diffCalculator.getDiff(oldTokens, newTokens)
@@ -98,8 +99,8 @@ internal class DiffCalculatorTest {
     @Test
     fun `getDiff should notice deleted tokens from middle`() {
         // given
-        val oldTokens = listOf("1", "2", "3").toWordsList()
-        val newTokens = listOf("1", "3").toWordsList()
+        val oldTokens = listOf("1", "2", "3").toTermsMap()
+        val newTokens = listOf("1", "3").toTermsMap()
 
         // when
         val diff = diffCalculator.getDiff(oldTokens, newTokens)
@@ -115,8 +116,8 @@ internal class DiffCalculatorTest {
     @Test
     fun `getDiff should notice deleted tokens from front`() {
         // given
-        val oldTokens = listOf("1", "2", "3").toWordsList()
-        val newTokens = listOf("2", "3").toWordsList()
+        val oldTokens = listOf("1", "2", "3").toTermsMap()
+        val newTokens = listOf("2", "3").toTermsMap()
 
         // when
         val diff = diffCalculator.getDiff(oldTokens, newTokens)
@@ -132,8 +133,8 @@ internal class DiffCalculatorTest {
     @Test
     fun `getDiff should aggregate deleted tokens`() {
         // given
-        val oldTokens = listOf("3", "1", "3", "2", "3", "3", "3").toWordsList()
-        val newTokens = listOf("1", "2").toWordsList()
+        val oldTokens = listOf("3", "1", "3", "2", "3", "3", "3").toTermsMap()
+        val newTokens = listOf("1", "2").toTermsMap()
 
         // when
         val diff = diffCalculator.getDiff(oldTokens, newTokens)
@@ -149,8 +150,8 @@ internal class DiffCalculatorTest {
     @Test
     fun `getDiff should notice changed tokens`() {
         // given
-        val oldTokens = listOf("1", "2", "3").toWordsList()
-        val newTokens = listOf("1", "4", "3").toWordsList()
+        val oldTokens = listOf("1", "2", "3").toTermsMap()
+        val newTokens = listOf("1", "4", "3").toTermsMap()
 
         // when
         val diff = diffCalculator.getDiff(oldTokens, newTokens)
@@ -165,8 +166,8 @@ internal class DiffCalculatorTest {
     @Test
     fun `getDiff should work with complex case`() {
         // given
-        val oldTokens = listOf("1", "2", "3", "4", "5").toWordsList()
-        val newTokens = listOf("0", "1", "4", "3", "4", "5", "0", "4", "2", "1").toWordsList()
+        val oldTokens = listOf("1", "2", "3", "4", "5").toTermsMap()
+        val newTokens = listOf("0", "1", "4", "3", "4", "5", "0", "4", "2", "1").toTermsMap()
 
         // when
         val diff = diffCalculator.getDiff(oldTokens, newTokens)
@@ -179,5 +180,10 @@ internal class DiffCalculatorTest {
         assertTrue(diff.containsAll(listOf(diff1, diff2, diff3)))
     }
 
-    private fun <T> List<T>.toWordsList() = this.map { Word(it as String) }.toList()
+    private fun <T> List<T>.toTermsMap(): Map<Term, Int> {
+        return this.map { Word(it as String) }
+            .groupingBy { it }
+            .eachCount()
+            .toMap()
+    }
 }

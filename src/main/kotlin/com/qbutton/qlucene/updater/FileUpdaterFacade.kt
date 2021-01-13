@@ -1,14 +1,15 @@
 package com.qbutton.qlucene.updater
 
+import com.qbutton.qlucene.common.FileIdConverter
 import com.qbutton.qlucene.common.Locker
 import com.qbutton.qlucene.dto.UpdateIndexInput
-import com.qbutton.qlucene.fileaccess.FileStorageFacade
 import com.qbutton.qlucene.index.Index
 import com.qbutton.qlucene.updater.tokenizer.Tokenizer
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import org.springframework.util.DigestUtils
+import java.nio.file.Files
+import java.nio.file.Paths
 
 /**
  * A facade to perform file update operation:
@@ -23,53 +24,46 @@ class FileUpdaterFacade @Autowired constructor(
     private val locker: Locker,
     private val tokenizers: List<Tokenizer>,
     private val diffCalculator: DiffCalculator,
-    private val fileStorageFacade: FileStorageFacade
+    private val fileIdConverter: FileIdConverter
 ) {
     private val logger = LoggerFactory.getLogger(FileUpdaterFacade::class.java)
 
     fun update(fileId: String) {
         logger.info("updating file $fileId")
 
-        val oldFile: String
         val newFile: String
         try {
             // update may be called for same file from different threads simultaneously. Following operations are not atomic, we need to lock while executing
             locker.lockId(fileId)
-            oldFile = fileStorageFacade.getLastIndexedContents(fileId)
-            newFile = fileStorageFacade.readRawTextFromFileSystem(fileId)
+            newFile = readFromFileSystem(fileId)
+            // loading files up to 10MB (which was a top limit in requirements) and comparing the tokens looks almost instant (< 1 second)
+            for (tokenizer in tokenizers) {
+                val filteredIndices = indices.filter { it.canExecute(tokenizer.getProducedTermClass()) }
 
-            if (hashesAreEqual(oldFile, newFile)) {
-                logger.info("file $fileId contents look identical, skipping updates")
-                return
+                logger.info("tokenizing with $tokenizer")
+                val newTokens = tokenizer.tokenize(newFile)
+
+                filteredIndices.forEach { index ->
+                    val oldTokens = index.findByDocId(fileId)
+                    val diff = diffCalculator.getDiff(oldTokens, newTokens)
+                    logger.info("diff calculated for file $fileId")
+                    diff.parallelStream()
+                        .map { UpdateIndexInput(it.token, it.operation, fileId, it.count) }
+                        .forEach { index.update(it) }
+                    index.updateReverseIndex(fileId, newTokens)
+                }
+
+                logger.info("finished updating indexes for tokenizer $tokenizer")
             }
-
-            fileStorageFacade.updateIndexedContents(fileId, newFile)
         } finally {
-            /* no need to hold lock any more, we've updated the cached contents and have the diff,
-             now we just need to propagate diff to index which is eventually consistent
-             */
             locker.unlockId(fileId)
-        }
-        // loading files up to 10MB (which was a top limit in requirements) and comparing the tokens looks almost instant (< 1 second)
-        for (tokenizer in tokenizers) {
-            logger.info("tokenizing with $tokenizer")
-            val oldTokens = tokenizer.tokenize(oldFile)
-            val newTokens = tokenizer.tokenize(newFile)
-            val diff = diffCalculator.getDiff(oldTokens, newTokens)
-            logger.info("diff calculated for file $fileId")
-            val filteredIndices = indices.filter { it.canExecute(tokenizer.getProducedTermClass()) }
-
-            diff.parallelStream()
-                .map { UpdateIndexInput(it.token, it.operation, fileId, it.count) }
-                .forEach { indexUpdateInfo -> filteredIndices.forEach { it.update(indexUpdateInfo) } }
-            logger.info("finished updating index for tokenizer $tokenizer")
         }
     }
 
-    private fun hashesAreEqual(oldFile: String, newFile: String): Boolean {
-        val oldFileHash = DigestUtils.md5Digest(oldFile.toByteArray())
-        val newFileHash = DigestUtils.md5Digest(newFile.toByteArray())
-
-        return oldFileHash.contentEquals(newFileHash)
+    private fun readFromFileSystem(fileId: String): String {
+        val fileName = fileIdConverter.toPath(fileId)
+        val path = Paths.get(fileName)
+        // empty contents is a valid result since we might have removed the file
+        return if (Files.exists(path)) path.toFile().readText() else ""
     }
 }
