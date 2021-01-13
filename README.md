@@ -12,7 +12,7 @@ An in-house engine to index and search for terms in given files.
     - [Directory addition to index](#2-directory-addition-to-index)
     - [Searching for files containing given word](#3-searching-for-files-containing-given-word)
     - [Searching for files containing given sentence](#4-searching-for-files-containing-given-sentence)
-- [High-level system design diagram](#high-level-system-design-diagrams)    
+- [High-level system overview](#high-level-system-overview)    
 - [Supported file formats](#supported-and-tested-file-formats)
 - [Good to know](#good-to-know)
 
@@ -107,9 +107,17 @@ curl -i http://localhost:8077/search/sentence/Simple%20sentence%202...
 ```
 ["src/test/resources/testfiles/rootdir/nesteddir/simpleFile2.txt"]
 ```
-### High-level system design diagrams
+### High-level system overview
+Main pieces of this library are the following:
+* Term (file `Term.kt` and descendants). Term, also token, is a basic thing which you would like to search by. E.g. you can search by a word, a sentence, or by annotation, or anything else.
+* Tokenizer (file `Tokenizer.kt` and descendants). Tokenizer implements the way of splitting given file into `Term`s.  
+* Index (file `Index.kt` and descendants). Every index is a storage of corresponding terms and the docs where the terms are mentioned. 
+
+Ideally, to extend the library and add a new index, implementing corresponding instances of the 3 classes above should be sufficient. Still, please find below a generic overview of read and write flows.
+
 Read (searching) flow
 ![alt text](drawings/ReadAPI.png)
+
 Write (indexing and re-indexing) flow
 ![alt text](drawings/WriteAPI.png)
 
