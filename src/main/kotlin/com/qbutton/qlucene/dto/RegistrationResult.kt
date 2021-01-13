@@ -10,6 +10,7 @@ abstract class RegistrationResult(private val message: String) {
 class FileRegistrationSuccessful(path: String) : RegistrationResult("Successfully registered file: $path")
 class FileAlreadyRegistered(path: String) : RegistrationResult("File $path is already registered")
 class FileSizeExceedsLimits(path: String) : RegistrationResult("File $path size exceeds configured limits, it will not be indexed")
+class FileFormatUnsupported(path: String) : RegistrationResult("File $path format is not supported")
 
 class DirectoryRegistrationSuccessful(path: String) : RegistrationResult("Successfully registered directory: $path")
 class DirectoryAlreadyRegistered(path: String) : RegistrationResult("Directory $path is already registered")

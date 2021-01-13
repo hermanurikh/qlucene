@@ -114,10 +114,7 @@ Write (indexing and re-indexing) flow
 ![alt text](drawings/WriteAPI.png)
 
 ### Supported and tested file formats
-* `.txt`
-* `.kt`
-* `.java`
-* `.properties`
+See `file.supported-extensions` property in `search.properties`.
 
 ### Good to know
 * Background monitoring is made with built-in Java library, where events come with delay up to a minute. Therefore:

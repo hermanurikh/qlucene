@@ -227,4 +227,16 @@ class IndexAdditionTest {
         filesFound = userAPI.searchWord("zoo")
         assertTrue(filesFound.isEmpty())
     }
+
+    @Test
+    fun `adding file with unsupported format will not result in indexing`() {
+        // given
+
+        // when
+        userAPI.addToIndex(rootDir5)
+
+        // then
+        val filesFound = userAPI.searchWord("august")
+        assertTrue(filesFound.isEmpty())
+    }
 }

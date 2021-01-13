@@ -8,6 +8,7 @@ import com.qbutton.qlucene.dto.DirectoryRegistrationSuccessful
 import com.qbutton.qlucene.dto.DirectoryShouldNotBeRegistered
 import com.qbutton.qlucene.dto.DirectoryUnregistrationSuccessful
 import com.qbutton.qlucene.dto.FileAlreadyRegistered
+import com.qbutton.qlucene.dto.FileFormatUnsupported
 import com.qbutton.qlucene.dto.FileMonitorState
 import com.qbutton.qlucene.dto.FileRegistrationSuccessful
 import com.qbutton.qlucene.dto.FileSizeExceedsLimits
@@ -20,6 +21,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import org.springframework.util.StringUtils
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
@@ -44,7 +46,9 @@ class WatchService @Autowired constructor(
     @Value("\${indexed-contents.root-dir}")
     private val storageIndexDir: String,
     @Value("\${file.max-indexed-size}")
-    private val maxFileSize: Long
+    private val maxFileSize: Long,
+    @Value("\${file.supported-extensions}")
+    private val supportedExtensions: Set<String>
 ) : Resettable {
     // stores mapping between currently monitored dir/file and state (monitored recursively or one-level). See class doc.
     private val monitoredFiles = ConcurrentHashMap<String, FileMonitorState>()
@@ -157,6 +161,10 @@ class WatchService @Autowired constructor(
         if (Files.size(Paths.get(path)) > maxFileSize) {
             return FileSizeExceedsLimits(path)
         }
+        if (!supportedExtensions.contains(StringUtils.getFilenameExtension(path))) {
+            return FileFormatUnsupported(path)
+        }
+
         val fileId = fileIdConverter.toId(path)
         try {
             locker.lockId(fileId)
