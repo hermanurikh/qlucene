@@ -40,8 +40,6 @@ class WatchService @Autowired constructor(
     private val fileIdConverter: FileIdConverter,
     private val fileUpdaterFacade: FileUpdaterFacade,
     private val backgroundEventsPublisher: BackgroundEventsPublisher,
-    @Value("\${directory.index.max-depth}")
-    private val maxDepth: Int,
     @Value("\${file.max-indexed-size}")
     private val maxFileSize: Long,
     @Value("\${file.supported-extensions}")
@@ -108,19 +106,6 @@ class WatchService @Autowired constructor(
         } finally {
             locker.unlockId(dirId)
         }
-    }
-
-    /**
-     * Registers current directory and recursively walks the file tree to register untracked directories.
-     * It is limited by depth passed as class parameter.
-     */
-    fun registerRootDir(path: String): RegistrationResult {
-        val result = registerDir(path, true)
-        if (result !is DirectoryAlreadyRegistered) {
-            val fileTreeWalker = FileTreeWalker(this, path)
-            Files.walkFileTree(Paths.get(path), emptySet(), maxDepth, fileTreeWalker)
-        }
-        return result
     }
 
     fun unregister(path: String): UnregistrationResult {

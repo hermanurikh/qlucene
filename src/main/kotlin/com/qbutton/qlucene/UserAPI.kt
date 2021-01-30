@@ -1,20 +1,16 @@
 package com.qbutton.qlucene
 
 import com.qbutton.qlucene.common.Resettable
-import com.qbutton.qlucene.dto.AbnormalFileRegistrationResult
-import com.qbutton.qlucene.dto.FileNotFoundRegistrationResult
-import com.qbutton.qlucene.dto.RegistrationResult
 import com.qbutton.qlucene.dto.Sentence
 import com.qbutton.qlucene.dto.Word
 import com.qbutton.qlucene.searcher.SearchFacade
-import com.qbutton.qlucene.updater.background.WatchService
+import com.qbutton.qlucene.updater.FileRegistrationFacade
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import java.nio.file.Paths
 
 /**
  * A class exposing all API via which a user interacts with application.
@@ -24,8 +20,8 @@ import java.nio.file.Paths
 @RestController
 class UserAPI @Autowired constructor(
     private val searchFacade: SearchFacade,
-    private val watchService: WatchService,
-    private val statefulBeans: List<Resettable>
+    private val fileRegistrationFacade: FileRegistrationFacade,
+    private val statefulBeans: List<Resettable>,
 ) {
     /**
      * E.g.
@@ -35,20 +31,7 @@ class UserAPI @Autowired constructor(
      *      curl --data "path=src/test/resources/testfiles" http://localhost:8077/add/
      */
     @PostMapping("/add/")
-    fun addToIndex(@RequestParam path: String): RegistrationResult {
-        val file = Paths.get(path).toFile()
-
-        return when {
-            !file.exists() -> FileNotFoundRegistrationResult(path)
-            file.isDirectory -> {
-                watchService.registerRootDir(path)
-            }
-            file.isFile -> {
-                watchService.registerFile(path)
-            }
-            else -> AbnormalFileRegistrationResult(path)
-        }
-    }
+    fun addToIndex(@RequestParam path: String) = fileRegistrationFacade.registerPath(path)
 
     /**
      * E.g.
