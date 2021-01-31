@@ -1,6 +1,7 @@
 package com.qbutton.qlucene.common
 
 import org.springframework.stereotype.Component
+import java.nio.file.Path
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -14,9 +15,10 @@ class FileIdConverter : Resettable {
     private final val fileNameToId = ConcurrentHashMap<String, String>()
     private final val idToFileName = ConcurrentHashMap<String, String>()
 
-    fun toId(path: String): String {
-        val id = fileNameToId.computeIfAbsent(path) { UUID.randomUUID().toString() }
-        idToFileName.putIfAbsent(id, path)
+    fun toId(path: Path): String {
+        val stringPath = path.toString()
+        val id = fileNameToId.computeIfAbsent(stringPath) { UUID.randomUUID().toString() }
+        idToFileName.putIfAbsent(id, stringPath)
         return id
     }
 

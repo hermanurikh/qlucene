@@ -7,6 +7,7 @@ import com.qbutton.qlucene.integration.nestedFileName
 import com.qbutton.qlucene.integration.tmpDir
 import com.qbutton.qlucene.integration.tmpTestDir
 import com.qbutton.qlucene.integration.tmpTestNestedDir
+import com.qbutton.qlucene.integration.toAbsolutePath
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -28,7 +29,7 @@ class ComplicatedScenariosTest {
     @Autowired
     private lateinit var userAPI: UserAPI
 
-    private val fileToMonitor = "$tmpTestNestedDir${fileSeparator}$nestedFileName"
+    private val fileToMonitor = "$tmpTestNestedDir${fileSeparator}$nestedFileName".toAbsolutePath()
 
     @BeforeEach
     fun createDirs() {

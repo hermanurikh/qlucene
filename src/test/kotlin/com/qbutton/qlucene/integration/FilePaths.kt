@@ -1,6 +1,7 @@
 package com.qbutton.qlucene.integration
 
 import java.io.File
+import java.nio.file.Paths
 
 const val rootDirName = "rootdir"
 const val rootDir2Name = "rootdir2"
@@ -24,3 +25,5 @@ val rootDir5 = "$resourcesRoot${fileSeparator}$rootDir5Name"
 
 val tmpTestDir = "$tmpDir${fileSeparator}test"
 val tmpTestNestedDir = "$tmpTestDir${fileSeparator}level1"
+
+fun String.toAbsolutePath() = Paths.get(this).toAbsolutePath().toString()

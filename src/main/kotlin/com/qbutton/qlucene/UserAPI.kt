@@ -27,11 +27,19 @@ class UserAPI @Autowired constructor(
      * E.g.
      *  - add a single file:
      *      curl --data "path=src/test/resources/testfiles/rootdir/nesteddir/simpleFile2.txt" http://localhost:8077/add/
-     *  - add a directory (recursively, with subdirectories):
-     *      curl --data "path=src/test/resources/testfiles" http://localhost:8077/add/
+     *  - add a directory (recursively, with subdirectories): three
+     *      curl --data "path=src" http://localhost:8077/add/
+     *      curl --data "path=/Users/gurikh/code/intellij-community-master" http://localhost:8077/add/
      */
     @PostMapping("/add/")
-    fun addToIndex(@RequestParam path: String) = fileRegistrationFacade.registerPath(path)
+    fun addToIndex(@RequestParam path: String) = fileRegistrationFacade.register(path)
+
+    /**
+     * E.g.
+     * curl --data "path=src/test/resources/testfiles" http://localhost:8077/remove/
+     */
+    @PostMapping("/remove/")
+    fun removeFromIndex(@RequestParam path: String) = fileRegistrationFacade.unregister(path)
 
     /**
      * E.g.

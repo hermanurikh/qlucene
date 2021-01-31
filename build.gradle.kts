@@ -23,6 +23,8 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("io.methvin:directory-watcher:0.14.0")
+    implementation("log4j:log4j:1.2.17")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 

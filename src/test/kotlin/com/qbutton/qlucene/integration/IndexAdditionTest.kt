@@ -31,7 +31,7 @@ class IndexAdditionTest {
     @Test
     fun `file should be searchable after it is added directly`() {
         // given
-        val filePath = nestedFile
+        val filePath = nestedFile.toAbsolutePath()
         var filesFound = userAPI.searchWord("august")
         assertTrue(filesFound.isEmpty())
 
@@ -55,7 +55,7 @@ class IndexAdditionTest {
     fun `file should be searchable after it is added as a part of dir`() {
         // given
         val dirPath = nestedDir
-        val filePath = nestedFile
+        val filePath = nestedFile.toAbsolutePath()
         var filesFound = userAPI.searchWord("august")
         assertTrue(filesFound.isEmpty())
 
@@ -75,7 +75,7 @@ class IndexAdditionTest {
     fun `file should be searchable after it is added as a part of nested dir`() {
         // given
         val dirPath = rootDir
-        val filePath = nestedFile
+        val filePath = nestedFile.toAbsolutePath()
         var filesFound = userAPI.searchWord("august")
         assertTrue(filesFound.isEmpty())
 
@@ -101,16 +101,16 @@ class IndexAdditionTest {
         // then
         filesFound = userAPI.searchWord("august")
         assertEquals(1, filesFound.size)
-        assertEquals(nestedFile, filesFound[0])
+        assertEquals(nestedFile.toAbsolutePath(), filesFound[0])
         filesFound = userAPI.searchWord("january")
         assertEquals(1, filesFound.size)
-        assertEquals("$rootDir${fileSeparator}simpleFile1.txt", filesFound[0])
+        assertEquals("$rootDir${fileSeparator}simpleFile1.txt".toAbsolutePath(), filesFound[0])
     }
 
     @Test
     fun `adding file, then dir should add different files at different times`() {
         // given
-        val filePath = nestedFile
+        val filePath = nestedFile.toAbsolutePath()
         var filesFound = userAPI.searchWord("august")
         assertTrue(filesFound.isEmpty())
         filesFound = userAPI.searchWord("january")
@@ -122,7 +122,7 @@ class IndexAdditionTest {
         userAPI.addToIndex(filePath)
         filesFound = userAPI.searchWord("august")
         assertEquals(1, filesFound.size)
-        assertEquals(nestedFile, filesFound[0])
+        assertEquals(filePath, filesFound[0])
         filesFound = userAPI.searchWord("january")
         assertTrue(filesFound.isEmpty())
         filesFound = userAPI.searchWord("devils")
@@ -132,16 +132,16 @@ class IndexAdditionTest {
         userAPI.addToIndex(rootDir)
         filesFound = userAPI.searchWord("august")
         assertEquals(1, filesFound.size)
-        assertEquals(nestedFile, filesFound[0])
+        assertEquals(filePath, filesFound[0])
         filesFound = userAPI.searchWord("january")
         assertEquals(1, filesFound.size)
-        assertEquals("$rootDir${fileSeparator}simpleFile1.txt", filesFound[0])
+        assertEquals("$rootDir${fileSeparator}simpleFile1.txt".toAbsolutePath(), filesFound[0])
         filesFound = userAPI.searchWord("devils")
         assertEquals(3, filesFound.size)
         assertAll(
-            { filesFound.contains("$rootDir${fileSeparator}simpleFile1.txt") },
-            { filesFound.contains("$rootDir${fileSeparator}englishWords1.txt") },
-            { filesFound.contains("$rootDir${fileSeparator}englishWords2.txt") }
+            { filesFound.contains("$rootDir${fileSeparator}simpleFile1.txt".toAbsolutePath()) },
+            { filesFound.contains("$rootDir${fileSeparator}englishWords1.txt".toAbsolutePath()) },
+            { filesFound.contains("$rootDir${fileSeparator}englishWords2.txt".toAbsolutePath()) }
         )
     }
 
@@ -162,23 +162,23 @@ class IndexAdditionTest {
         // then
         filesFound = userAPI.searchWord("word3")
         assertEquals(1, filesFound.size)
-        assertEquals("$rootDir2${fileSeparator}simpleFile3.txt", filesFound[0])
+        assertEquals("$rootDir2${fileSeparator}simpleFile3.txt".toAbsolutePath(), filesFound[0])
         filesFound = userAPI.searchWord("august")
         assertEquals(2, filesFound.size)
         assertAll(
-            { filesFound.contains(nestedFile) },
-            { filesFound.contains("$rootDir2${fileSeparator}simpleFile3.txt") }
+            { filesFound.contains(nestedFile.toAbsolutePath()) },
+            { filesFound.contains("$rootDir2${fileSeparator}simpleFile3.txt".toAbsolutePath()) }
         )
         filesFound = userAPI.searchWord("january")
         assertEquals(1, filesFound.size)
-        assertEquals("$rootDir${fileSeparator}simpleFile1.txt", filesFound[0])
+        assertEquals("$rootDir${fileSeparator}simpleFile1.txt".toAbsolutePath(), filesFound[0])
         filesFound = userAPI.searchWord("devils")
         assertEquals(4, filesFound.size)
         assertAll(
-            { filesFound.contains("$rootDir${fileSeparator}simpleFile1.txt") },
-            { filesFound.contains("$rootDir${fileSeparator}englishWords1.txt") },
-            { filesFound.contains("$rootDir${fileSeparator}englishWords2.txt") },
-            { filesFound.contains("$rootDir2${fileSeparator}simpleFile3.txt") }
+            { filesFound.contains("$rootDir${fileSeparator}simpleFile1.txt".toAbsolutePath()) },
+            { filesFound.contains("$rootDir${fileSeparator}englishWords1.txt".toAbsolutePath()) },
+            { filesFound.contains("$rootDir${fileSeparator}englishWords2.txt".toAbsolutePath()) },
+            { filesFound.contains("$rootDir2${fileSeparator}simpleFile3.txt".toAbsolutePath()) }
         )
     }
 
@@ -194,9 +194,9 @@ class IndexAdditionTest {
         // then
         filesFound = userAPI.searchWord("april")
         assertEquals(3, filesFound.size)
-        assertEquals("$rootDir3${fileSeparator}file3.txt", filesFound[0])
-        assertEquals("$rootDir3${fileSeparator}file1.txt", filesFound[1])
-        assertEquals("$rootDir3${fileSeparator}file2.txt", filesFound[2])
+        assertEquals("$rootDir3${fileSeparator}file3.txt".toAbsolutePath(), filesFound[0])
+        assertEquals("$rootDir3${fileSeparator}file1.txt".toAbsolutePath(), filesFound[1])
+        assertEquals("$rootDir3${fileSeparator}file2.txt".toAbsolutePath(), filesFound[2])
     }
 
     @Test

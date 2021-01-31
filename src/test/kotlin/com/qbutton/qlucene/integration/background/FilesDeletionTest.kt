@@ -7,6 +7,7 @@ import com.qbutton.qlucene.integration.nestedFileName
 import com.qbutton.qlucene.integration.tmpDir
 import com.qbutton.qlucene.integration.tmpTestDir
 import com.qbutton.qlucene.integration.tmpTestNestedDir
+import com.qbutton.qlucene.integration.toAbsolutePath
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -24,7 +25,7 @@ import java.nio.file.Paths
 @SpringBootTest
 class FilesDeletionTest {
 
-    private val fileToDeletePath = "$tmpTestNestedDir${fileSeparator}$nestedFileName"
+    private val fileToDeletePath = "$tmpTestNestedDir${fileSeparator}$nestedFileName".toAbsolutePath()
 
     @Autowired
     private lateinit var userAPI: UserAPI

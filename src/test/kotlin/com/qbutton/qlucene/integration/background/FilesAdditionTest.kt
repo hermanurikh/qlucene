@@ -9,6 +9,7 @@ import com.qbutton.qlucene.integration.rootDir
 import com.qbutton.qlucene.integration.tmpDir
 import com.qbutton.qlucene.integration.tmpTestDir
 import com.qbutton.qlucene.integration.tmpTestNestedDir
+import com.qbutton.qlucene.integration.toAbsolutePath
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -45,7 +46,7 @@ class FilesAdditionTest {
         var filesFound = userAPI.searchWord("august")
         assertTrue(filesFound.isEmpty())
         val fileFrom = nestedFile
-        val fileTo = "$tmpTestDir${fileSeparator}$nestedFileName"
+        val fileTo = "$tmpTestDir${fileSeparator}$nestedFileName".toAbsolutePath()
 
         // when
         Files.copy(Paths.get(fileFrom), Paths.get(fileTo))
@@ -64,7 +65,7 @@ class FilesAdditionTest {
         var filesFound = userAPI.searchWord("august")
         assertTrue(filesFound.isEmpty())
         val fileFrom = nestedFile
-        val fileTo = "$tmpTestNestedDir${fileSeparator}$nestedFileName"
+        val fileTo = "$tmpTestNestedDir${fileSeparator}$nestedFileName".toAbsolutePath()
 
         // when
         Files.copy(Paths.get(fileFrom), Paths.get(fileTo))
@@ -92,16 +93,16 @@ class FilesAdditionTest {
         // then
         filesFound = userAPI.searchWord("august")
         assertEquals(1, filesFound.size)
-        assertEquals("$dirTo${fileSeparator}$nestedDirName${fileSeparator}$nestedFileName", filesFound[0])
+        assertEquals("$dirTo${fileSeparator}$nestedDirName${fileSeparator}$nestedFileName".toAbsolutePath(), filesFound[0])
         filesFound = userAPI.searchWord("january")
         assertEquals(1, filesFound.size)
-        assertEquals("$dirTo${fileSeparator}simpleFile1.txt", filesFound[0])
+        assertEquals("$dirTo${fileSeparator}simpleFile1.txt".toAbsolutePath(), filesFound[0])
         filesFound = userAPI.searchWord("devils")
         assertEquals(3, filesFound.size)
         assertAll(
-            { filesFound.contains("$dirTo${fileSeparator}simpleFile1.txt") },
-            { filesFound.contains("$dirTo${fileSeparator}englishWords1.txt") },
-            { filesFound.contains("$dirTo${fileSeparator}englishWords2.txt") }
+            { filesFound.contains("$dirTo${fileSeparator}simpleFile1.txt".toAbsolutePath()) },
+            { filesFound.contains("$dirTo${fileSeparator}englishWords1.txt".toAbsolutePath()) },
+            { filesFound.contains("$dirTo${fileSeparator}englishWords2.txt".toAbsolutePath()) }
         )
     }
 
@@ -121,16 +122,16 @@ class FilesAdditionTest {
         // then
         filesFound = userAPI.searchWord("august")
         assertEquals(1, filesFound.size)
-        assertEquals("$dirTo${fileSeparator}$nestedDirName/$nestedFileName", filesFound[0])
+        assertEquals("$dirTo${fileSeparator}$nestedDirName/$nestedFileName".toAbsolutePath(), filesFound[0])
         filesFound = userAPI.searchWord("january")
         assertEquals(1, filesFound.size)
-        assertEquals("$dirTo${fileSeparator}simpleFile1.txt", filesFound[0])
+        assertEquals("$dirTo${fileSeparator}simpleFile1.txt".toAbsolutePath(), filesFound[0])
         filesFound = userAPI.searchWord("devils")
         assertEquals(3, filesFound.size)
         assertAll(
-            { filesFound.contains("$dirTo${fileSeparator}simpleFile1.txt") },
-            { filesFound.contains("$dirTo${fileSeparator}englishWords1.txt") },
-            { filesFound.contains("$dirTo${fileSeparator}englishWords2.txt") }
+            { filesFound.contains("$dirTo${fileSeparator}simpleFile1.txt".toAbsolutePath()) },
+            { filesFound.contains("$dirTo${fileSeparator}englishWords1.txt".toAbsolutePath()) },
+            { filesFound.contains("$dirTo${fileSeparator}englishWords2.txt".toAbsolutePath()) }
         )
     }
 
