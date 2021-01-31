@@ -30,7 +30,6 @@ class FileRegistrationFacade @Autowired constructor(
 
     /**
      * Registers current directory and recursively walks the file tree to register untracked directories.
-     * It is limited by depth passed as class parameter.
      */
     private fun registerRootDir(path: String): RegistrationResult {
         val result = watchService.registerDir(path, true)
