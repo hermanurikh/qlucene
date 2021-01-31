@@ -1,27 +1,32 @@
 package com.qbutton.qlucene.config
 
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.PropertySource
 import org.springframework.context.event.ApplicationEventMulticaster
 import org.springframework.context.event.SimpleApplicationEventMulticaster
-import org.springframework.core.task.SimpleAsyncTaskExecutor
-import java.nio.file.FileSystems
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 @Configuration
 @PropertySource("classpath:search.properties")
-class AppConfig {
-
-    @Bean
-    fun jdkWatchService() = FileSystems.getDefault().newWatchService()!!
+class AppConfig @Autowired constructor(
+    @Value("\${indexer.parallelism}")
+    private val numThreads: Int
+) {
 
     /**
      * This bean ensures spring processes events in async manner.
      */
     @Bean
-    fun applicationEventMulticaster(): ApplicationEventMulticaster {
+    fun applicationEventMulticaster(qLuceneExecutorService: ExecutorService): ApplicationEventMulticaster {
         val eventMulticaster = SimpleApplicationEventMulticaster()
-        eventMulticaster.setTaskExecutor(SimpleAsyncTaskExecutor())
+        eventMulticaster.setTaskExecutor(qLuceneExecutorService)
         return eventMulticaster
     }
+
+    @Bean
+    fun qLuceneExecutorService() = Executors.newFixedThreadPool(numThreads)!!
 }
