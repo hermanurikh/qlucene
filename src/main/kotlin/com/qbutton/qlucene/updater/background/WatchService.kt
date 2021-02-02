@@ -1,7 +1,7 @@
 package com.qbutton.qlucene.updater.background
 
 import com.qbutton.qlucene.common.Resettable
-import io.methvin.watcher.DirectoryWatcher
+import com.qbutton.qlucene.updater.background.io.methvin.watcher.DirectoryWatcher
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationEventPublisher
