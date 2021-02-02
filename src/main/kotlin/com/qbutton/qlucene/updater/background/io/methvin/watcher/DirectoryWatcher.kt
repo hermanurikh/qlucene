@@ -42,8 +42,9 @@ import java.util.concurrent.ForkJoinPool
 */
 
 /*
-This is a copy of io.methvin.watcher.DirectoryWatcher, with a small patch allowing the library to break in the middle
-of traversing file path.
+This is a copy of io.methvin.watcher.DirectoryWatcher, with a couple of small patches:
+ - allowing the library to break in the middle of traversing file path
+ - adding max depth of traversal.
  */
 
 class DirectoryWatcher(
@@ -51,18 +52,20 @@ class DirectoryWatcher(
     listener: DirectoryChangeListener,
     watchService: WatchService?,
     fileHasher: FileHasher?,
-    logger: Logger?
+    logger: Logger?,
+    maxDepth: Int
 ) {
     /**
      * A builder for a [DirectoryWatcher]. Use `DirectoryWatcher.builder()` to get a new
      * instance.
      */
-    class Builder constructor() {
+    class Builder {
         private var paths = emptyList<Path>()
-        private var listener = DirectoryChangeListener { _: DirectoryChangeEvent? -> }
+        private var listener = DirectoryChangeListener { }
         private var logger: Logger? = null
         private var fileHasher = FileHasher.DEFAULT_FILE_HASHER
         private var watchService: WatchService? = null
+        private var maxDepth = Integer.MAX_VALUE
 
         /** Set multiple paths to watch.  */
         fun paths(paths: List<Path>): Builder {
@@ -120,6 +123,11 @@ class DirectoryWatcher(
             return this
         }
 
+        fun maxTraversalDepth(maxDepth: Int): Builder {
+            this.maxDepth = maxDepth
+            return this
+        }
+
         @Throws(IOException::class)
         fun build(): DirectoryWatcher {
             if (watchService == null) {
@@ -128,7 +136,7 @@ class DirectoryWatcher(
             if (logger == null) {
                 staticLogger()
             }
-            return DirectoryWatcher(paths, listener, watchService, fileHasher, logger)
+            return DirectoryWatcher(paths, listener, watchService, fileHasher, logger, maxDepth)
         }
 
         @Throws(IOException::class)
@@ -168,6 +176,7 @@ class DirectoryWatcher(
     private val pathHashes: SortedMap<Path?, FileHash?>
     private val directories: MutableSet<Path?>
     private val keyRoots: MutableMap<WatchKey, Path?>
+    private val maxDepth: Int
 
     // set to null until we check if FILE_TREE is supported
     private var fileTreeSupported: Boolean? = null
@@ -258,7 +267,8 @@ class DirectoryWatcher(
                                 PathUtils.recursiveVisitFiles(
                                     childPath,
                                     { dir: Path? -> notifyCreateEvent(true, dir, count, rootPath) },
-                                    { file: Path? -> notifyCreateEvent(false, file, count, rootPath) }
+                                    { file: Path? -> notifyCreateEvent(false, file, count, rootPath) },
+                                    maxDepth
                                 )
                             }
                         }
@@ -371,7 +381,7 @@ class DirectoryWatcher(
             }
         } else {
             // Since FILE_TREE is unsupported, register root directory and sub-directories
-            PathUtils.recursiveVisitFiles(start, { dir: Path? -> register(dir, false, context) }, { })
+            PathUtils.recursiveVisitFiles(start, { dir: Path? -> register(dir, false, context) }, { }, maxDepth)
         }
     }
 
@@ -431,7 +441,8 @@ class DirectoryWatcher(
         keyRoots = ConcurrentHashMap()
         this.fileHasher = fileHasher
         this.logger = logger
-        PathUtils.initWatcherState(paths, fileHasher, pathHashes, directories)
+        this.maxDepth = maxDepth
+        PathUtils.initWatcherState(paths, fileHasher, pathHashes, directories, maxDepth)
         for (path in paths) {
             registerAll(path, path)
         }

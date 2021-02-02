@@ -214,6 +214,30 @@ class IndexAdditionTest {
     }
 
     @Test
+    fun `adding a directory won't result in indexing file deeper than configured maxDepth`() {
+        // given
+        var filesFound = userAPI.searchWord("august")
+        assertTrue(filesFound.isEmpty())
+
+        // when
+        userAPI.addToIndex(rootDir6)
+
+        // then
+        filesFound = userAPI.searchWord("august")
+        assertEquals(1, filesFound.size)
+        assertEquals(
+            (
+                "$rootDir6$fileSeparator" +
+                    "l2${fileSeparator}l3${fileSeparator}l4${fileSeparator}l5${fileSeparator}l6$fileSeparator" +
+                    "l7${fileSeparator}l8${fileSeparator}l9${fileSeparator}l10${fileSeparator}l11$fileSeparator" +
+                    "l12${fileSeparator}l13${fileSeparator}l14$fileSeparator" +
+                    "l15${fileSeparator}file1.txt"
+                ).toAbsolutePath(),
+            filesFound[0]
+        )
+    }
+
+    @Test
     fun `adding file which exceeds configured limits will not result in indexing`() {
         // given
         var filesFound = userAPI.searchWord("zoo")

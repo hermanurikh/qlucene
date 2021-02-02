@@ -1,5 +1,6 @@
 package com.qbutton.qlucene
 
+import com.qbutton.qlucene.common.IndexCanceller
 import com.qbutton.qlucene.common.Resettable
 import com.qbutton.qlucene.dto.Sentence
 import com.qbutton.qlucene.dto.Word
@@ -20,8 +21,9 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 class UserAPI @Autowired constructor(
     private val searchFacade: SearchFacade,
-    private val fileRegistrationFacade: FileRegistrationFacade,
+    private val indexCanceller: IndexCanceller,
     private val statefulBeans: List<Resettable>,
+    private val fileRegistrationFacade: FileRegistrationFacade,
 ) {
     /**
      * E.g.
@@ -53,6 +55,18 @@ class UserAPI @Autowired constructor(
      */
     @GetMapping("/search/sentence/{token}")
     fun searchSentence(@PathVariable token: String) = searchFacade.search(Sentence(token))
+
+    /**
+     * Cancels indexing given path. It is done to urgently stop current indexing which may be traversing some enormous
+     * file tree.
+     *
+     * If no indexing is currently happening for that path, this will cancel next indexing attempt for it.
+     *
+     * E.g.
+     * curl http://localhost:8077/cancel/
+     */
+    @PostMapping("/cancel/")
+    fun cancelIndexing(@RequestParam path: String) = indexCanceller.cancel(path)
 
     /**
      * Clears current indices and resets state. This method is not thread-safe and is made mostly for ease of testing.

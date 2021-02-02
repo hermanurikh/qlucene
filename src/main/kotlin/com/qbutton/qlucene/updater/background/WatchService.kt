@@ -8,6 +8,7 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
 import java.nio.file.Path
 import java.util.Collections
+import java.util.concurrent.Callable
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
@@ -16,6 +17,8 @@ import javax.annotation.PreDestroy
 @Component
 class WatchService(
     private val applicationEventPublisher: ApplicationEventPublisher,
+    @Value("\${directory.index.max-depth}")
+    private val maxDepth: Int,
     @Value("\${file.polling-interval}")
     private val filePollingInterval: Long,
     private val qLuceneExecutorService: ExecutorService
@@ -29,16 +32,20 @@ class WatchService(
         qLuceneExecutorService.submit(watcher)
     }
 
-    fun attachWatcherToDir(path: Path): Future<*> =
-        qLuceneExecutorService.submit {
-            // this is recursive and takes a while, do it async
-            val watcher = DirectoryWatcher.builder()
-                .path(path)
-                .listener { applicationEventPublisher.publishEvent(it) }
-                .build()
-            directoryWatchers.add(watcher)
-            watcher.watchAsync(qLuceneExecutorService)
-        }
+    fun attachWatcherToDir(path: Path): Future<DirectoryWatcher> =
+        qLuceneExecutorService.submit(
+            Callable {
+                // this is recursive and takes a while, do it async
+                val watcher = DirectoryWatcher.builder()
+                    .path(path)
+                    .listener { applicationEventPublisher.publishEvent(it) }
+                    .maxTraversalDepth(maxDepth)
+                    .build()
+                directoryWatchers.add(watcher)
+                watcher.watchAsync(qLuceneExecutorService)
+                watcher
+            }
+        )
 
     override fun resetState() {
         directoryWatchers.forEach { it.close() }

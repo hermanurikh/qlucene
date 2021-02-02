@@ -11,7 +11,6 @@ import java.nio.file.SimpleFileVisitor
 import java.nio.file.WatchEvent
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.SortedMap
-import java.util.concurrent.ConcurrentSkipListMap
 
 /*
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,36 +46,16 @@ object PathUtils {
     }
 
     @Throws(IOException::class)
-    fun createHashCodeMap(file: Path, fileHasher: FileHasher?): SortedMap<Path, FileHash> {
-        return createHashCodeMap(listOf(file), fileHasher)
-    }
-
-    @Throws(IOException::class)
-    fun createHashCodeMap(files: List<Path?>, fileHasher: FileHasher?): SortedMap<Path, FileHash> {
-        val lastModifiedMap: SortedMap<Path, FileHash> = ConcurrentSkipListMap()
-        if (fileHasher != null) {
-            for (file in files) {
-                for (child in recursiveListFiles(file!!)) {
-                    val hash = hash(fileHasher, child)
-                    if (hash != null) {
-                        lastModifiedMap[child] = hash
-                    }
-                }
-            }
-        }
-        return lastModifiedMap
-    }
-
-    @Throws(IOException::class)
     fun initWatcherState(
         roots: List<Path?>,
         fileHasher: FileHasher?,
         hashes: MutableMap<Path?, FileHash?>,
-        directories: MutableSet<Path?>
+        directories: MutableSet<Path?>,
+        maxDepth: Int
     ) {
         for (root in roots) {
             if (fileHasher == null) {
-                recursiveVisitFiles(root, { e: Path? -> directories.add(e) }) { }
+                recursiveVisitFiles(root, { e: Path? -> directories.add(e) }, { }, maxDepth)
             } else {
                 val addHash = { path: Path ->
                     val hash = hash(fileHasher, path)
@@ -88,27 +67,19 @@ object PathUtils {
                         directories.add(dir)
                         addHash(dir)
                     },
-                    addHash
+                    addHash,
+                    maxDepth
                 )
             }
         }
     }
 
     @Throws(IOException::class)
-    fun recursiveListFiles(file: Path): Set<Path> {
-        if (!Files.exists(file)) {
-            return emptySet()
-        }
-        val files: MutableSet<Path> = HashSet()
-        files.add(file)
-        recursiveVisitFiles(file, { e: Path -> files.add(e) }) { e: Path -> files.add(e) }
-        return files
-    }
-
-    @Throws(IOException::class)
-    fun recursiveVisitFiles(file: Path?, onDirectory: (Path) -> Unit, onFile: (Path) -> Unit) {
+    fun recursiveVisitFiles(file: Path?, onDirectory: (Path) -> Unit, onFile: (Path) -> Unit, maxDepth: Int) {
         Files.walkFileTree(
             file,
+            emptySet(),
+            maxDepth,
             object : SimpleFileVisitor<Path>() {
                 @Throws(IOException::class)
                 override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {

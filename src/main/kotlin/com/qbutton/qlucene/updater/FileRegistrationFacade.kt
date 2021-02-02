@@ -82,6 +82,7 @@ class FileRegistrationFacade @Autowired constructor(
         if (!registeredRoots.isMonitored(path) || filteredOutRoots.shouldFilterOut(path)) {
             return NotRegistered(path)
         }
+        // todo let's remove it from index (async)
         filteredOutRoots.add(filePath)
         return if (Files.isDirectory(filePath))
             DirectoryUnregistrationSuccessful(path)

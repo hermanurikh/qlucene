@@ -18,16 +18,16 @@ import java.util.concurrent.ConcurrentHashMap
  * which provides in-memory or filesystem dispatching out-of-the-box.
  */
 abstract class Index : Executable, Resettable {
-    // main index -> mapping of Term to a map of [file id -> number of occurrences in file]
-    private val index = ConcurrentHashMap<Term, ConcurrentHashMap<String, Int>>()
-    // reverse index -> mapping of file id to a list of terms it contains
-    private val reverseIndex = ConcurrentHashMap<String, Map<Term, Int>>()
+    // reverse index -> mapping of Term to a map of [file id -> number of occurrences in file]
+    private val reverseIndex = ConcurrentHashMap<Term, ConcurrentHashMap<String, Int>>()
+    // main index -> mapping of file id to a list of terms it contains
+    private val forwardIndex = ConcurrentHashMap<String, Map<Term, Int>>()
 
     /**
      * Searches for given term.
      */
     fun find(term: Term): Set<DocumentSearchResult> {
-        return index[term]
+        return reverseIndex[term]
             ?.entries
             // map and then filter, not vice versa - or we may get entries updated by other thread after filtering
             ?.map { DocumentSearchResult(it.key, it.value) }
@@ -35,20 +35,20 @@ abstract class Index : Executable, Resettable {
             ?.toSet() ?: emptySet()
     }
 
-    fun findByDocId(fileId: String) = reverseIndex[fileId] ?: emptyMap()
+    fun findByDocId(fileId: String) = forwardIndex[fileId] ?: emptyMap()
 
     fun updateReverseIndex(fileId: String, terms: Map<Term, Int>) {
-        reverseIndex[fileId] = terms
+        forwardIndex[fileId] = terms
     }
 
     fun update(updateInfo: UpdateIndexInput) {
-        val termMap = index.computeIfAbsent(updateInfo.term) { ConcurrentHashMap() }
+        val termMap = reverseIndex.computeIfAbsent(updateInfo.term) { ConcurrentHashMap() }
         val delta = if (updateInfo.operation == Operation.CREATE) updateInfo.count else -updateInfo.count
         termMap.merge(updateInfo.fileId, delta, Integer::sum)
     }
 
     override fun resetState() {
-        index.clear()
         reverseIndex.clear()
+        forwardIndex.clear()
     }
 }

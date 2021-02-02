@@ -23,7 +23,7 @@ if the former are changed.
 
 In particular, current implementation provides the following functionality:
 * adding files or directories to index. Directories are added recursively, that means, adding top-level directory results in nested directories
-also being tracked;
+also being tracked - with a limitation of depth configurable by `directory.index.max-depth` parameter of `search.properties`;
 * searching for files by given words or sentences;
 * when a previously added to index file or directory is changed (e.g. any file content change, or addition/removal of file/directory), corresponding
 changes get propagated to index;
@@ -125,11 +125,12 @@ Write (indexing and re-indexing) flow
 See `file.supported-extensions` property in `search.properties`.
 
 ### Good to know
-* Background monitoring events can come with delay up to a minute. Therefore:
+* Background monitoring is made with built-in Java library, where events come with delay up to a minute. Therefore:
     * please allow for up to a minute between modifying contents of monitored files and checking the visibility in index
     * integration tests checking background updates are disabled by default, they can be enabled with `-Dtest.profile=integration` build variable. Build time
     takes much more with it.
 * the maximum number of files returned on search request is configurable with `reducer.size-based.max-size` parameter of `search.properties`
+* the maximum depth when recursively registering directories is configurable by `directory.index.max-depth` parameter of `search.properties`
 * deletion of root monitored directory itself is not supported. Inner directories and files of monitored directory can be deleted,
 and the system will track it properly. However, if the directory itself which has been added to index directly is deleted, the behavior is 
  unspecified.
