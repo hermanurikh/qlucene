@@ -32,15 +32,15 @@ class WatchService(
         qLuceneExecutorService.submit(watcher)
     }
 
-    fun attachWatcherToDir(path: Path): Future<DirectoryWatcher> =
+    fun attachWatcherToRootDir(path: Path): Future<DirectoryWatcher> =
         qLuceneExecutorService.submit(
             Callable {
                 // this is recursive and takes a while, do it async
-                val watcher = DirectoryWatcher.builder()
-                    .path(path)
-                    .listener { applicationEventPublisher.publishEvent(it) }
-                    .maxTraversalDepth(maxDepth)
-                    .build()
+                val watcher = DirectoryWatcher(
+                    path,
+                    { ev -> applicationEventPublisher.publishEvent(ev) },
+                    maxDepth
+                )
                 directoryWatchers.add(watcher)
                 watcher.watchAsync(qLuceneExecutorService)
                 watcher

@@ -45,49 +45,42 @@ object PathUtils {
         return pathMap.subMap(treeRoot, Paths.get(treeRoot.toString(), "" + Character.MAX_VALUE))
     }
 
-    @Throws(IOException::class)
     fun initWatcherState(
-        roots: List<Path?>,
-        fileHasher: FileHasher?,
+        root: Path,
+        fileHasher: FileHasher,
         hashes: MutableMap<Path?, FileHash?>,
         directories: MutableSet<Path?>,
         maxDepth: Int
     ) {
-        for (root in roots) {
-            if (fileHasher == null) {
-                recursiveVisitFiles(root, { e: Path? -> directories.add(e) }, { }, maxDepth)
-            } else {
-                val addHash = { path: Path ->
-                    val hash = hash(fileHasher, path)
-                    if (hash != null) hashes[path] = hash
-                }
-                recursiveVisitFiles(
-                    root,
-                    { dir: Path ->
-                        directories.add(dir)
-                        addHash(dir)
-                    },
-                    addHash,
-                    maxDepth
-                )
-            }
+        val addHash = { path: Path ->
+            val hash = hash(fileHasher, path)
+            if (hash != null) hashes[path] = hash
         }
+        recursiveVisitFiles(
+            root,
+            { dir: Path ->
+                directories.add(dir)
+                addHash(dir)
+            },
+            {
+                addHash(it)
+            },
+            maxDepth
+        )
     }
 
-    @Throws(IOException::class)
     fun recursiveVisitFiles(file: Path?, onDirectory: (Path) -> Unit, onFile: (Path) -> Unit, maxDepth: Int) {
         Files.walkFileTree(
             file,
             emptySet(),
             maxDepth,
             object : SimpleFileVisitor<Path>() {
-                @Throws(IOException::class)
+
                 override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
                     onDirectory(dir)
                     return FileVisitResult.CONTINUE
                 }
 
-                @Throws(IOException::class)
                 override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
                     onFile(file)
                     return FileVisitResult.CONTINUE

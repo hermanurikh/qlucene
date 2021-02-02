@@ -66,7 +66,7 @@ class FileRegistrationFacade @Autowired constructor(
                     fileUpdaterFacade.update(fileId)
                     FileRegistrationSuccessful(path)
                 } else {
-                    val directoryWatcherAttachedFuture = watchService.attachWatcherToDir(filePath)
+                    val directoryWatcherAttachedFuture = watchService.attachWatcherToRootDir(filePath)
                     parallelFileTreeWalker.walk(filePath)
                     directoryWatcherAttachedFuture.get()
                     DirectoryRegistrationSuccessful(path)

@@ -25,16 +25,12 @@ class ParallelFileTreeWalker(
     fun walk(root: Path) {
         Files.walk(root, maxDepth)
             .parallel()
-            .forEach {
-                when {
-                    Files.isRegularFile(it) -> visitFile(it.toAbsolutePath())
-                }
-            }
+            .forEach { visitFileIfNeeded(it) }
     }
 
-    private fun visitFile(file: Path) {
+    private fun visitFileIfNeeded(file: Path) {
         if (fileValidator.isValid(file)) {
-            fileUpdaterFacade.update(fileIdConverter.toId(file))
+            fileUpdaterFacade.update(fileIdConverter.toId(file.toAbsolutePath()))
         }
     }
 }

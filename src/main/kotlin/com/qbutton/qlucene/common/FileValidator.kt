@@ -1,5 +1,6 @@
 package com.qbutton.qlucene.common
 
+import com.qbutton.qlucene.dto.AbnormalFileRegistrationResult
 import com.qbutton.qlucene.dto.FileFormatUnsupported
 import com.qbutton.qlucene.dto.FileSizeExceedsLimits
 import com.qbutton.qlucene.dto.RegistrationResult
@@ -19,6 +20,11 @@ class FileValidator(
 
     fun validateFileOkForRegistration(path: Path): RegistrationResult? {
         val stringPath = path.toString()
+
+        if (!Files.isRegularFile(path)) {
+            return AbnormalFileRegistrationResult(stringPath)
+        }
+
         if (Files.size(path) > maxFileSize) {
             return FileSizeExceedsLimits(stringPath)
         }

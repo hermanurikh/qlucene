@@ -25,7 +25,6 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentSkipListMap
 import java.util.concurrent.Executor
-import java.util.concurrent.ForkJoinPool
 
 /*
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -48,123 +47,29 @@ This is a copy of io.methvin.watcher.DirectoryWatcher, with a couple of small pa
  */
 
 class DirectoryWatcher(
-    paths: List<Path?>,
+    path: Path,
     listener: DirectoryChangeListener,
-    watchService: WatchService?,
-    fileHasher: FileHasher?,
-    logger: Logger?,
     maxDepth: Int
 ) {
-    /**
-     * A builder for a [DirectoryWatcher]. Use `DirectoryWatcher.builder()` to get a new
-     * instance.
-     */
-    class Builder {
-        private var paths = emptyList<Path>()
-        private var listener = DirectoryChangeListener { }
-        private var logger: Logger? = null
-        private var fileHasher = FileHasher.DEFAULT_FILE_HASHER
-        private var watchService: WatchService? = null
-        private var maxDepth = Integer.MAX_VALUE
 
-        /** Set multiple paths to watch.  */
-        fun paths(paths: List<Path>): Builder {
-            this.paths = paths
-            return this
-        }
-
-        /** Set a single path to watch.  */
-        fun path(path: Path): Builder {
-            return paths(listOf(path))
-        }
-
-        /** Set a listener that will be called when a directory change event occurs.  */
-        fun listener(listener: DirectoryChangeListener): Builder {
-            this.listener = listener
-            return this
-        }
-
-        /**
-         * Set a [WatchService] implementation that will be used by the watcher.
-         *
-         *
-         * By default, this detects your OS and either uses the native JVM watcher or the macOS
-         * watcher.
-         */
-        fun watchService(watchService: WatchService?): Builder {
-            this.watchService = watchService
-            return this
-        }
-
-        /**
-         * Set a logger to be used by the watcher. This defaults to `LoggerFactory.getLogger(DirectoryWatcher.class)`
-         */
-        fun logger(logger: Logger?): Builder {
-            this.logger = logger
-            return this
-        }
-
-        /**
-         * Defines whether file hashing should be used to catch duplicate events. Defaults to `true`.
-         */
-        fun fileHashing(enabled: Boolean): Builder {
-            fileHasher = if (enabled) FileHasher.DEFAULT_FILE_HASHER else null
-            return this
-        }
-
-        /**
-         * Defines the file hasher to be used by the watcher.
-         *
-         *
-         * Note: will implicitly enable file hashing. Setting to null is equivalent to `fileHashing(false)`
-         */
-        fun fileHasher(fileHasher: FileHasher?): Builder {
-            this.fileHasher = fileHasher
-            return this
-        }
-
-        fun maxTraversalDepth(maxDepth: Int): Builder {
-            this.maxDepth = maxDepth
-            return this
-        }
-
-        @Throws(IOException::class)
-        fun build(): DirectoryWatcher {
-            if (watchService == null) {
-                osDefaultWatchService()
-            }
-            if (logger == null) {
-                staticLogger()
-            }
-            return DirectoryWatcher(paths, listener, watchService, fileHasher, logger, maxDepth)
-        }
-
-        @Throws(IOException::class)
-        private fun osDefaultWatchService(): Builder {
-            val isMac = System.getProperty("os.name").toLowerCase().contains("mac")
-            return if (isMac) {
-                watchService(
-                    MacOSXListeningWatchService(
-                        object : MacOSXListeningWatchService.Config {
-                            override fun fileHasher(): FileHasher? {
-                                /**
-                                 * Always return null here. When MacOSXListeningWatchService is used with
-                                 * DirectoryWatcher, then the hashing should happen within DirectoryWatcher. If
-                                 * users wish to override this then they must instantiate
-                                 * MacOSXListeningWatchService and pass it to DirectoryWatcher.
-                                 */
-                                return null
-                            }
-                        }
-                    )
-                )
-            } else {
-                watchService(FileSystems.getDefault().newWatchService())
-            }
-        }
-
-        private fun staticLogger(): Builder {
-            return logger(LoggerFactory.getLogger(DirectoryWatcher::class.java))
+    private fun osDefaultWatchService(): WatchService {
+        val isMac = System.getProperty("os.name").toLowerCase().contains("mac")
+        return if (isMac) {
+            MacOSXListeningWatchService(
+                object : MacOSXListeningWatchService.Config {
+                    override fun fileHasher(): FileHasher? {
+                        /**
+                         * Always return null here. When MacOSXListeningWatchService is used with
+                         * DirectoryWatcher, then the hashing should happen within DirectoryWatcher. If
+                         * users wish to override this then they must instantiate
+                         * MacOSXListeningWatchService and pass it to DirectoryWatcher.
+                         */
+                        return null
+                    }
+                }
+            )
+        } else {
+            FileSystems.getDefault().newWatchService()
         }
     }
 
@@ -190,11 +95,7 @@ class DirectoryWatcher(
      *
      * @param executor the executor to use to watch asynchronously
      */
-    /**
-     * Asynchronously watch the directories using `ForkJoinPool.commonPool()` as the executor
-     */
-    @JvmOverloads
-    fun watchAsync(executor: Executor? = ForkJoinPool.commonPool()): CompletableFuture<Void?> {
+    fun watchAsync(executor: Executor): CompletableFuture<Void> {
         return CompletableFuture.supplyAsync(
             {
                 watch()
@@ -204,15 +105,11 @@ class DirectoryWatcher(
         )
     }
 
-    fun pathHashes(): Map<Path?, FileHash?> {
-        return pathHashes.toMap()
-    }
-
     /**
      * Watch the directories. Block until either the listener stops watching or the DirectoryWatcher
      * is closed.
      */
-    fun watch() {
+    private fun watch() {
         while (listener.isWatching) {
             // wait for key to be signalled
             var key: WatchKey
@@ -256,7 +153,7 @@ class DirectoryWatcher(
                     if (kind === StandardWatchEventKinds.ENTRY_CREATE) {
                         val isDirectory = Files.isDirectory(childPath, LinkOption.NOFOLLOW_LINKS)
                         if (isDirectory) {
-                            if (java.lang.Boolean.TRUE != fileTreeSupported) {
+                            if (true != fileTreeSupported) {
                                 registerAll(childPath, rootPath)
                             }
                             /*
@@ -266,8 +163,8 @@ class DirectoryWatcher(
                    */if (!isMac) {
                                 PathUtils.recursiveVisitFiles(
                                     childPath,
-                                    { dir: Path? -> notifyCreateEvent(true, dir, count, rootPath) },
-                                    { file: Path? -> notifyCreateEvent(false, file, count, rootPath) },
+                                    { dir: Path -> notifyCreateEvent(true, dir, count, rootPath) },
+                                    { file: Path -> notifyCreateEvent(false, file, count, rootPath) },
                                     maxDepth
                                 )
                             }
@@ -343,7 +240,6 @@ class DirectoryWatcher(
         }
     }
 
-    @Throws(IOException::class)
     private fun onEvent(
         eventType: DirectoryChangeEvent.EventType,
         isDirectory: Boolean,
@@ -358,15 +254,13 @@ class DirectoryWatcher(
         )
     }
 
-    @Throws(IOException::class)
     fun close() {
         watchService!!.close()
         isClosed = true
     }
 
-    @Throws(IOException::class)
     private fun registerAll(start: Path?, context: Path?) {
-        if (java.lang.Boolean.FALSE != fileTreeSupported) {
+        if (false != fileTreeSupported) {
             // Try using FILE_TREE modifier since we aren't certain that it's unsupported
             try {
                 register(start, true, context)
@@ -386,7 +280,6 @@ class DirectoryWatcher(
     }
 
     // Internal method to be used by registerAll
-    @Throws(IOException::class)
     private fun register(directory: Path?, useFileTreeModifier: Boolean, context: Path?) {
         logger!!.debug("Registering [{}].", directory)
         val watchable = if (isMac) WatchablePath(directory) else directory!!
@@ -397,7 +290,6 @@ class DirectoryWatcher(
         registeredPathToRootPath[directory] = context
     }
 
-    @Throws(IOException::class)
     private fun notifyCreateEvent(isDirectory: Boolean, path: Path?, count: Int, rootPath: Path?) {
         if (fileHasher != null) {
             val newHash = PathUtils.hash(fileHasher, path)
@@ -424,27 +316,18 @@ class DirectoryWatcher(
         onEvent(DirectoryChangeEvent.EventType.CREATE, isDirectory, path, count, rootPath)
     }
 
-    companion object {
-        /** Get a new builder for a [DirectoryWatcher].  */
-        fun builder(): Builder {
-            return Builder()
-        }
-    }
-
     init {
         registeredPathToRootPath = HashMap()
         this.listener = listener
-        this.watchService = watchService
+        this.watchService = osDefaultWatchService()
         isMac = watchService is MacOSXListeningWatchService
         pathHashes = ConcurrentSkipListMap()
         directories = Collections.newSetFromMap(ConcurrentHashMap())
         keyRoots = ConcurrentHashMap()
-        this.fileHasher = fileHasher
-        this.logger = logger
+        this.fileHasher = FileHasher.DEFAULT_FILE_HASHER
+        this.logger = LoggerFactory.getLogger(DirectoryWatcher::class.java)
         this.maxDepth = maxDepth
-        PathUtils.initWatcherState(paths, fileHasher, pathHashes, directories, maxDepth)
-        for (path in paths) {
-            registerAll(path, path)
-        }
+        PathUtils.initWatcherState(path, fileHasher, pathHashes, directories, maxDepth)
+        registerAll(path, path)
     }
 }
