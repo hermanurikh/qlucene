@@ -78,13 +78,13 @@ object PathUtils {
             if (fileHasher == null) {
                 recursiveVisitFiles(root, { e: Path? -> directories.add(e) }) { }
             } else {
-                val addHash = { path: Path? ->
+                val addHash = { path: Path ->
                     val hash = hash(fileHasher, path)
                     if (hash != null) hashes[path] = hash
                 }
                 recursiveVisitFiles(
                     root,
-                    { dir: Path? ->
+                    { dir: Path ->
                         directories.add(dir)
                         addHash(dir)
                     },
