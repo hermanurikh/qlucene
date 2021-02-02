@@ -12,10 +12,9 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
 import java.nio.file.Path
 import java.util.Collections
-import java.util.concurrent.Callable
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Future
+import java.util.concurrent.Phaser
 import javax.annotation.PreDestroy
 
 @Component
@@ -40,29 +39,39 @@ class WatchService(
         qLuceneExecutorService.submit(watcher)
     }
 
-    fun attachWatcherToRootDir(path: Path): Future<DirectoryWatcher> =
-        qLuceneExecutorService.submit(
-            // this is recursive and takes a while, do it async
-            Callable {
-                val addedFileIds = HashSet<String>()
-                val watcher = DirectoryWatcher(
-                    path = path,
-                    isTraversalCancelledForId = indexCanceller::isCancelled,
-                    toFileIdAction = fileIdConverter::toId,
-                    listener = { applicationEventPublisher.publishEvent(it) },
-                    registeredFileIds = addedFileIds,
-                    indexFileAction = {
-                        if (fileValidator.isValid(it)) {
-                            fileUpdaterFacade.update(fileIdConverter.toId(it.toAbsolutePath()))
-                        }
-                    },
-                    maxDepth = maxDepth,
-                )
-                directoryWatchers.add(watcher)
-                watcher.watchAsync(qLuceneExecutorService)
-                watcher
+    fun attachWatcherToRootDirAndIndex(path: Path): Pair<DirectoryWatcher, Set<String>> {
+        val addedFileIds = HashSet<String>()
+        val phaser = Phaser(1)
+        val watcher = createWatcher(path, addedFileIds, phaser)
+        directoryWatchers.add(watcher)
+        watcher.watchAsync(qLuceneExecutorService)
+
+        // wait until all file indexing tasks which we have submitted in createWatcher method finish executing
+        phaser.arriveAndAwaitAdvance()
+        return Pair(watcher, addedFileIds)
+    }
+
+    /**
+     * Creates the watcher from io.methwin library. It traverses file system on initialization,
+     * so we index at the same time as attaching watchers.
+     */
+    private fun createWatcher(path: Path, addedFileIds: HashSet<String>, phaser: Phaser) = DirectoryWatcher(
+        path = path,
+        isTraversalCancelledForId = indexCanceller::isCancelled,
+        toFileIdAction = fileIdConverter::toId,
+        listener = { applicationEventPublisher.publishEvent(it) },
+        registeredFileIds = addedFileIds,
+        indexFileAction = {
+            phaser.register()
+            qLuceneExecutorService.submit {
+                if (fileValidator.isValid(it)) {
+                    fileUpdaterFacade.update(fileIdConverter.toId(it.toAbsolutePath()))
+                }
+                phaser.arriveAndDeregister()
             }
-        )
+        },
+        maxDepth = maxDepth,
+    )
 
     override fun resetState() {
         directoryWatchers.forEach { it.close() }

@@ -1,6 +1,7 @@
 package com.qbutton.qlucene.updater
 
 import com.qbutton.qlucene.common.FileIdConverter
+import com.qbutton.qlucene.common.FileIdsToRemove
 import com.qbutton.qlucene.common.FileValidator
 import com.qbutton.qlucene.common.FilteredOutRoots
 import com.qbutton.qlucene.common.IndexCanceller
@@ -17,7 +18,6 @@ import com.qbutton.qlucene.dto.FileUnregistrationSuccessful
 import com.qbutton.qlucene.dto.NotRegistered
 import com.qbutton.qlucene.dto.RegistrationResult
 import com.qbutton.qlucene.dto.UnregistrationResult
-import com.qbutton.qlucene.updater.background.ParallelFileTreeWalker
 import com.qbutton.qlucene.updater.background.WatchService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -33,9 +33,9 @@ class FileRegistrationFacade @Autowired constructor(
     private val indexCanceller: IndexCanceller,
     private val registeredRoots: RegisteredRoots,
     private val fileIdConverter: FileIdConverter,
+    private val fileIdsToRemove: FileIdsToRemove,
     private val filteredOutRoots: FilteredOutRoots,
-    private val fileUpdaterFacade: FileUpdaterFacade,
-    private val parallelFileTreeWalker: ParallelFileTreeWalker
+    private val fileUpdaterFacade: FileUpdaterFacade
 ) {
 
     fun register(path: String): RegistrationResult {
@@ -63,19 +63,23 @@ class FileRegistrationFacade @Autowired constructor(
                     if (isFile) FileAlreadyRegistered(path) else DirectoryAlreadyRegistered(path)
                 }
             } else {
-                registeredRoots.add(filePath)
                 return if (isFile) {
                     watchService.attachWatcherToFile(filePath)
                     fileUpdaterFacade.update(fileId)
+                    registeredRoots.add(filePath)
                     FileRegistrationSuccessful(path)
                 } else {
-                    val directoryWatcherAttachedFuture = watchService.attachWatcherToRootDir(filePath)
-                    val watcher = directoryWatcherAttachedFuture.get()
+                    val (watcher, addedFileIds) = watchService.attachWatcherToRootDirAndIndex(filePath)
                     if (!indexCanceller.isCancelled(fileId)) {
+                        registeredRoots.add(filePath)
+                        // these fileIds may be there from previous indexing waiting for clean-up, so remove them
+                        fileIdsToRemove.removeAll(addedFileIds)
                         DirectoryRegistrationSuccessful(path)
                     } else {
                         watcher.close()
-                        // add to blacklist and clean up
+                        // add addedFileIds to blacklist and clean up
+                        fileIdsToRemove.addAll(addedFileIds)
+                        indexCanceller.resetState(fileId)
                         DirectoryRegistrationCancelled(path)
                     }
                 }
@@ -90,7 +94,6 @@ class FileRegistrationFacade @Autowired constructor(
         if (!registeredRoots.isMonitored(path) || filteredOutRoots.shouldFilterOut(path)) {
             return NotRegistered(path)
         }
-        // todo let's remove it from index (async)
         filteredOutRoots.add(filePath)
         return if (Files.isDirectory(filePath))
             DirectoryUnregistrationSuccessful(path)

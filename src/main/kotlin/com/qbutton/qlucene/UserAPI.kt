@@ -29,7 +29,7 @@ class UserAPI @Autowired constructor(
      * E.g.
      *  - add a single file:
      *      curl --data "path=src/test/resources/testfiles/rootdir/nesteddir/simpleFile2.txt" http://localhost:8077/add/
-     *  - add a directory (recursively, with subdirectories): three
+     *  - add a directory (recursively, with subdirectories):
      *      curl --data "path=src" http://localhost:8077/add/
      *      curl --data "path=/Users/gurikh/code/intellij-community-master" http://localhost:8077/add/
      */
@@ -62,8 +62,11 @@ class UserAPI @Autowired constructor(
      *
      * If no indexing is currently happening for that path, this will cancel next indexing attempt for it.
      *
+     * It may be racy, if cancelling of some path intersects with another indexing in that path, and is therefore
+     * not thread-safe.
+     *
      * E.g.
-     * curl http://localhost:8077/cancel/
+     * curl --data "path=/Users/gurikh/code/intellij-community-master" http://localhost:8077/cancel/
      */
     @PostMapping("/cancel/")
     fun cancelIndexing(@RequestParam path: String) = indexCanceller.cancel(path)

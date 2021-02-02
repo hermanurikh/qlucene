@@ -41,6 +41,13 @@ abstract class Index : Executable, Resettable {
         forwardIndex[fileId] = terms
     }
 
+    fun remove(fileId: String) {
+        val terms = forwardIndex.remove(fileId) ?: return
+        terms.keys.forEach {
+            reverseIndex[it]?.remove(fileId)
+        }
+    }
+
     fun update(updateInfo: UpdateIndexInput) {
         val termMap = reverseIndex.computeIfAbsent(updateInfo.term) { ConcurrentHashMap() }
         val delta = if (updateInfo.operation == Operation.CREATE) updateInfo.count else -updateInfo.count
