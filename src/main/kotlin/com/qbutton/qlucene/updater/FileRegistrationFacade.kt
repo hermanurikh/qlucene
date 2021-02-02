@@ -3,9 +3,11 @@ package com.qbutton.qlucene.updater
 import com.qbutton.qlucene.common.FileIdConverter
 import com.qbutton.qlucene.common.FileValidator
 import com.qbutton.qlucene.common.FilteredOutRoots
+import com.qbutton.qlucene.common.IndexCanceller
 import com.qbutton.qlucene.common.Locker
 import com.qbutton.qlucene.common.RegisteredRoots
 import com.qbutton.qlucene.dto.DirectoryAlreadyRegistered
+import com.qbutton.qlucene.dto.DirectoryRegistrationCancelled
 import com.qbutton.qlucene.dto.DirectoryRegistrationSuccessful
 import com.qbutton.qlucene.dto.DirectoryUnregistrationSuccessful
 import com.qbutton.qlucene.dto.FileAlreadyRegistered
@@ -28,6 +30,7 @@ class FileRegistrationFacade @Autowired constructor(
     private val locker: Locker,
     private val watchService: WatchService,
     private val fileValidator: FileValidator,
+    private val indexCanceller: IndexCanceller,
     private val registeredRoots: RegisteredRoots,
     private val fileIdConverter: FileIdConverter,
     private val filteredOutRoots: FilteredOutRoots,
@@ -67,9 +70,14 @@ class FileRegistrationFacade @Autowired constructor(
                     FileRegistrationSuccessful(path)
                 } else {
                     val directoryWatcherAttachedFuture = watchService.attachWatcherToRootDir(filePath)
-                    parallelFileTreeWalker.walk(filePath)
-                    directoryWatcherAttachedFuture.get()
-                    DirectoryRegistrationSuccessful(path)
+                    val watcher = directoryWatcherAttachedFuture.get()
+                    if (!indexCanceller.isCancelled(fileId)) {
+                        DirectoryRegistrationSuccessful(path)
+                    } else {
+                        watcher.close()
+                        // add to blacklist and clean up
+                        DirectoryRegistrationCancelled(path)
+                    }
                 }
             }
         } finally {

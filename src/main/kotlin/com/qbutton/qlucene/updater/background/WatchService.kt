@@ -1,6 +1,10 @@
 package com.qbutton.qlucene.updater.background
 
+import com.qbutton.qlucene.common.FileIdConverter
+import com.qbutton.qlucene.common.FileValidator
+import com.qbutton.qlucene.common.IndexCanceller
 import com.qbutton.qlucene.common.Resettable
+import com.qbutton.qlucene.updater.FileUpdaterFacade
 import com.qbutton.qlucene.updater.background.io.methvin.watcher.DirectoryWatcher
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -21,6 +25,10 @@ class WatchService(
     private val maxDepth: Int,
     @Value("\${file.polling-interval}")
     private val filePollingInterval: Long,
+    private val fileValidator: FileValidator,
+    private val indexCanceller: IndexCanceller,
+    private val fileIdConverter: FileIdConverter,
+    private val fileUpdaterFacade: FileUpdaterFacade,
     private val qLuceneExecutorService: ExecutorService
 ) : Resettable {
 
@@ -34,12 +42,21 @@ class WatchService(
 
     fun attachWatcherToRootDir(path: Path): Future<DirectoryWatcher> =
         qLuceneExecutorService.submit(
+            // this is recursive and takes a while, do it async
             Callable {
-                // this is recursive and takes a while, do it async
+                val addedFileIds = HashSet<String>()
                 val watcher = DirectoryWatcher(
-                    path,
-                    { ev -> applicationEventPublisher.publishEvent(ev) },
-                    maxDepth
+                    path = path,
+                    isTraversalCancelledForId = indexCanceller::isCancelled,
+                    toFileIdAction = fileIdConverter::toId,
+                    listener = { applicationEventPublisher.publishEvent(it) },
+                    registeredFileIds = addedFileIds,
+                    indexFileAction = {
+                        if (fileValidator.isValid(it)) {
+                            fileUpdaterFacade.update(fileIdConverter.toId(it.toAbsolutePath()))
+                        }
+                    },
+                    maxDepth = maxDepth,
                 )
                 directoryWatchers.add(watcher)
                 watcher.watchAsync(qLuceneExecutorService)

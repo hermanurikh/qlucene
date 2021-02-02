@@ -43,14 +43,59 @@ import java.util.concurrent.Executor
 /*
 This is a copy of io.methvin.watcher.DirectoryWatcher, with a couple of small patches:
  - allowing the library to break in the middle of traversing file path
- - adding max depth of traversal.
+ - adding max depth of traversal
+ - simplification of structure for my use case
  */
 
 class DirectoryWatcher(
     path: Path,
+    isTraversalCancelledForId: (String) -> Boolean,
+    toFileIdAction: (Path) -> String,
     listener: DirectoryChangeListener,
-    maxDepth: Int
+    registeredFileIds: MutableSet<String>,
+    indexFileAction: (Path) -> Unit,
+    private val maxDepth: Int
 ) {
+
+    private val logger: Logger
+    private val watchService: WatchService
+    private val registeredPathToRootPath: MutableMap<Path?, Path?>
+    private val isMac: Boolean
+    private val listener: DirectoryChangeListener
+    private val pathHashes: SortedMap<Path?, FileHash?>
+    private val directories: MutableSet<Path?>
+    private val keyRoots: MutableMap<WatchKey, Path?>
+    // set to null until we check if FILE_TREE is supported
+    private var fileTreeSupported: Boolean? = null
+
+    private val fileHasher: FileHasher?
+    @Volatile
+    var isClosed = false
+        private set
+
+    init {
+        registeredPathToRootPath = HashMap()
+        this.listener = listener
+        this.watchService = osDefaultWatchService()
+        isMac = watchService is MacOSXListeningWatchService
+        pathHashes = ConcurrentSkipListMap()
+        directories = Collections.newSetFromMap(ConcurrentHashMap())
+        keyRoots = ConcurrentHashMap()
+        this.fileHasher = FileHasher.DEFAULT_FILE_HASHER
+        this.logger = LoggerFactory.getLogger(DirectoryWatcher::class.java)
+        PathUtils.initWatcherState(
+            path,
+            fileHasher,
+            pathHashes,
+            directories,
+            maxDepth,
+            registeredFileIds,
+            toFileIdAction,
+            isTraversalCancelledForId,
+            indexFileAction
+        )
+        registerAll(path, path)
+    }
 
     private fun osDefaultWatchService(): WatchService {
         val isMac = System.getProperty("os.name").toLowerCase().contains("mac")
@@ -73,23 +118,6 @@ class DirectoryWatcher(
         }
     }
 
-    private val logger: Logger?
-    private val watchService: WatchService?
-    private val registeredPathToRootPath: MutableMap<Path?, Path?>
-    private val isMac: Boolean
-    private val listener: DirectoryChangeListener
-    private val pathHashes: SortedMap<Path?, FileHash?>
-    private val directories: MutableSet<Path?>
-    private val keyRoots: MutableMap<WatchKey, Path?>
-    private val maxDepth: Int
-
-    // set to null until we check if FILE_TREE is supported
-    private var fileTreeSupported: Boolean? = null
-    private val fileHasher: FileHasher?
-
-    @Volatile
-    var isClosed = false
-        private set
     /**
      * Asynchronously watch the directories.
      *
@@ -112,9 +140,8 @@ class DirectoryWatcher(
     private fun watch() {
         while (listener.isWatching) {
             // wait for key to be signalled
-            var key: WatchKey
-            key = try {
-                watchService!!.take()
+            val key: WatchKey = try {
+                watchService.take()
             } catch (x: InterruptedException) {
                 return
             }
@@ -163,8 +190,8 @@ class DirectoryWatcher(
                    */if (!isMac) {
                                 PathUtils.recursiveVisitFiles(
                                     childPath,
-                                    { dir: Path -> notifyCreateEvent(true, dir, count, rootPath) },
-                                    { file: Path -> notifyCreateEvent(false, file, count, rootPath) },
+                                    { dir: Path -> notifyCreateEvent(true, dir, count, rootPath); true },
+                                    { file: Path -> notifyCreateEvent(false, file, count, rootPath); true },
                                     maxDepth
                                 )
                             }
@@ -190,7 +217,7 @@ class DirectoryWatcher(
                                 pathHashes[childPath] = newHash
                                 onEvent(DirectoryChangeEvent.EventType.MODIFY, isDirectory, childPath, count, rootPath)
                             } else if (newHash == null) {
-                                logger!!.debug(
+                                logger.debug(
                                     "Failed to hash modified file [{}]. It may have been deleted.",
                                     childPath
                                 )
@@ -213,13 +240,13 @@ class DirectoryWatcher(
                         }
                     }
                 } catch (e: Exception) {
-                    logger!!.debug("DirectoryWatcher got an exception while watching!", e)
+                    logger.debug("DirectoryWatcher got an exception while watching!", e)
                     listener.onException(e)
                 }
             }
             val valid = key.reset()
             if (!valid) {
-                logger!!.debug("WatchKey for [{}] no longer valid; removing.", key.watchable())
+                logger.debug("WatchKey for [{}] no longer valid; removing.", key.watchable())
                 // remove the key from the keyRoots
                 val registeredPath = keyRoots.remove(key)
 
@@ -247,7 +274,7 @@ class DirectoryWatcher(
         count: Int,
         rootPath: Path?
     ) {
-        logger!!.debug("-> {} [{}] (isDirectory: {})", eventType, childPath, isDirectory)
+        logger.debug("-> {} [{}] (isDirectory: {})", eventType, childPath, isDirectory)
         val hash = pathHashes[childPath]
         listener.onEvent(
             DirectoryChangeEvent(eventType, isDirectory, childPath, hash, count, rootPath)
@@ -255,7 +282,7 @@ class DirectoryWatcher(
     }
 
     fun close() {
-        watchService!!.close()
+        watchService.close()
         isClosed = true
     }
 
@@ -268,20 +295,25 @@ class DirectoryWatcher(
                 fileTreeSupported = true
             } catch (e: UnsupportedOperationException) {
                 // UnsupportedOperationException should only happen if FILE_TREE is unsupported
-                logger!!.debug("Assuming ExtendedWatchEventModifier.FILE_TREE is not supported", e)
+                logger.debug("Assuming ExtendedWatchEventModifier.FILE_TREE is not supported", e)
                 fileTreeSupported = false
                 // If we failed to use the FILE_TREE modifier, try again without
                 registerAll(start, context)
             }
         } else {
             // Since FILE_TREE is unsupported, register root directory and sub-directories
-            PathUtils.recursiveVisitFiles(start, { dir: Path? -> register(dir, false, context) }, { }, maxDepth)
+            PathUtils.recursiveVisitFiles(
+                start,
+                { register(it, false, context); true },
+                { true },
+                maxDepth
+            )
         }
     }
 
     // Internal method to be used by registerAll
     private fun register(directory: Path?, useFileTreeModifier: Boolean, context: Path?) {
-        logger!!.debug("Registering [{}].", directory)
+        logger.debug("Registering [{}].", directory)
         val watchable = if (isMac) WatchablePath(directory) else directory!!
         val modifiers = if (useFileTreeModifier) arrayOf<WatchEvent.Modifier>(ExtendedWatchEventModifier.FILE_TREE) else arrayOf()
         val kinds = arrayOf<WatchEvent.Kind<*>>(StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY)
@@ -297,16 +329,16 @@ class DirectoryWatcher(
                 // Hashing could fail for locked files on Windows.
                 // Skip notification only if we confirm the file does not exist.
                 if (Files.notExists(path)) {
-                    logger!!.debug("Failed to hash created file [{}]. It may have been deleted.", path)
+                    logger.debug("Failed to hash created file [{}]. It may have been deleted.", path)
                     // Skip notifying the event.
                     return
                 } else {
                     // Just warn here and continue to notify the event.
-                    logger!!.debug("Failed to hash created file [{}]. It may be locked.", path)
+                    logger.debug("Failed to hash created file [{}]. It may be locked.", path)
                 }
             } else if (pathHashes.put(path, newHash) != null) {
                 // Skip notifying the event if we've already seen the path.
-                logger!!.debug("Skipping create event for path [{}]. Path already hashed.", path)
+                logger.debug("Skipping create event for path [{}]. Path already hashed.", path)
                 return
             }
         }
@@ -314,20 +346,5 @@ class DirectoryWatcher(
             directories.add(path)
         }
         onEvent(DirectoryChangeEvent.EventType.CREATE, isDirectory, path, count, rootPath)
-    }
-
-    init {
-        registeredPathToRootPath = HashMap()
-        this.listener = listener
-        this.watchService = osDefaultWatchService()
-        isMac = watchService is MacOSXListeningWatchService
-        pathHashes = ConcurrentSkipListMap()
-        directories = Collections.newSetFromMap(ConcurrentHashMap())
-        keyRoots = ConcurrentHashMap()
-        this.fileHasher = FileHasher.DEFAULT_FILE_HASHER
-        this.logger = LoggerFactory.getLogger(DirectoryWatcher::class.java)
-        this.maxDepth = maxDepth
-        PathUtils.initWatcherState(path, fileHasher, pathHashes, directories, maxDepth)
-        registerAll(path, path)
     }
 }

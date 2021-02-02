@@ -50,26 +50,44 @@ object PathUtils {
         fileHasher: FileHasher,
         hashes: MutableMap<Path?, FileHash?>,
         directories: MutableSet<Path?>,
-        maxDepth: Int
+        maxDepth: Int,
+        registeredFileIds: MutableSet<String>,
+        toFileIdAction: (Path) -> String,
+        isTraversalCancelledForId: (String) -> Boolean,
+        indexFileAction: (Path) -> Unit,
     ) {
         val addHash = { path: Path ->
             val hash = hash(fileHasher, path)
             if (hash != null) hashes[path] = hash
         }
+        val rootPathId = toFileIdAction(root.toAbsolutePath())
         recursiveVisitFiles(
             root,
-            { dir: Path ->
-                directories.add(dir)
-                addHash(dir)
+            {
+                directories.add(it)
+                addHash(it)
+                !isTraversalCancelledForId(rootPathId)
             },
             {
                 addHash(it)
+                if (isTraversalCancelledForId(rootPathId)) {
+                    false
+                } else {
+                    indexFileAction(it)
+                    registeredFileIds.add(toFileIdAction(it.toAbsolutePath()))
+                    true
+                }
             },
             maxDepth
         )
     }
 
-    fun recursiveVisitFiles(file: Path?, onDirectory: (Path) -> Unit, onFile: (Path) -> Unit, maxDepth: Int) {
+    fun recursiveVisitFiles(
+        file: Path?,
+        onDirectory: (Path) -> Boolean,
+        onFile: (Path) -> Boolean,
+        maxDepth: Int,
+    ) {
         Files.walkFileTree(
             file,
             emptySet(),
@@ -77,13 +95,11 @@ object PathUtils {
             object : SimpleFileVisitor<Path>() {
 
                 override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
-                    onDirectory(dir)
-                    return FileVisitResult.CONTINUE
+                    return if (onDirectory(dir)) FileVisitResult.CONTINUE else FileVisitResult.SKIP_SUBTREE
                 }
 
                 override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
-                    onFile(file)
-                    return FileVisitResult.CONTINUE
+                    return if (onFile(file)) FileVisitResult.CONTINUE else FileVisitResult.SKIP_SUBTREE
                 }
             }
         )
