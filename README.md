@@ -8,16 +8,12 @@ An in-house engine to index and search for terms in given files.
 - [System requirements](#system-requirements)
 - [How do I run it?](#how-do-i-run-it)
 - [How do I use it?](#how-do-i-use-it)
-    - [File addition to index](#1-file-addition-to-index)
-    - [Directory addition to index](#2-directory-addition-to-index)
-    - [Searching for files containing given word](#3-searching-for-files-containing-given-word)
-    - [Searching for files containing given sentence](#4-searching-for-files-containing-given-sentence)
 - [High-level system overview](#high-level-system-overview)    
 - [Supported file formats](#supported-and-tested-file-formats)
 - [Good to know](#good-to-know)
 
 ### What is QLucene?
-QLucene is an indexing and searching application. Its API allows adding directories and files to the index, and later searching
+QLucene is an indexing and searching library. Its API allows adding directories and files to the index, and later searching
 for the files which contain the given term. It monitors files and directories which had been added to index and updates the index
 if the former are changed.
 
@@ -36,77 +32,17 @@ depends on inotify limit.
 * JDK 11+
 
 ### How do I run it?
-#### Preferred way - IDE
-Just run a `QLuceneApplication::main` function from your favorite IDE~~A~~ and that should be it.
-#### CI way
-#####  For *nix
+#### Build a .jar
  ```
  ./gradlew build
-java -jar build/libs/qlucene-0.0.1-SNAPSHOT.jar
 ```
-#####  Windows
-```
-gradlew.bat build
-java -jar build/libs/qlucene-0.0.1-SNAPSHOT.jar
-```
+#### Include resulting .jar in your application
+* location is `build/libs/qlucene-0.0.1-SNAPSHOT.jar`
     
-> Make sure you have JDK 11 or higher on path to build the application.
+> Make sure you have JDK 11 or higher on path to build the .jar.
     
 ### How do I use it?
-`UserAPI.kt` has the API exposed via REST. You can check there for exact input parameters which are expected. 
-
-Below are some examples.
-#### 1. File addition to index
-Hit the POST `/add/` endpoint with request parameter `path` set to necessary file URI to add. 
-
-Example for MacOS:
-
-<small>Request:</small>
-```
-curl --data "path=src/test/resources/testfiles/rootdir/nesteddir/simpleFile2.txt" http://localhost:8077/add/
-```
-<small>Response:</small>
-```
-{"message":"Successfully registered file: src/test/resources/testfiles/rootdir/nesteddir/simpleFile2.txt"}
-```
-#### 2. Directory addition to index
-The same as above, just specify the parameter `path` to point to a valid directory.
-
-Example for MacOS:
-
-<small>Request:</small>
-```
-curl --data "path=src/test/resources/testfiles" http://localhost:8077/add/
-```
-<small>Response:</small>
-```
-{"message":"Successfully registered directory: src/test/resources/testfiles"}
-```
-#### 3. Searching for files containing given word 
-Hit the GET `/search/word/{token}` endpoint, where `{token}` is the desired word.
-
-Example for MacOS:
-
-<small>Request:</small>
-```
-curl -i http://localhost:8077/search/word/august
-```
-<small>Response:</small>
-```
-["src/test/resources/testfiles/rootdir2/simpleFile3.txt","src/test/resources/testfiles/rootdir/nesteddir/simpleFile2.txt"]
-```
-#### 4. Searching for files containing given sentence
-Hit the GET `/search/sentence/{token}` endpoint, where `{token}` is the desired sentence. Make sure that it is properly encoded as part of URL.
-Example for MacOS:
-
-<small>Request:</small>
-```
-curl -i http://localhost:8077/search/sentence/Simple%20sentence%202...
-```
-<small>Response:</small>
-```
-["src/test/resources/testfiles/rootdir/nesteddir/simpleFile2.txt"]
-```
+`UserAPI.kt` has the API exposed. You can check there for exact operations and input parameters which are expected. 
 ### High-level system overview
 Main pieces of this library are the following:
 * Term (file `Term.kt` and descendants). Term, also token, is a basic thing which you would like to search by. E.g. you can search by a word, a sentence, or by annotation, or anything else.
