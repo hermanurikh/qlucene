@@ -59,8 +59,8 @@ class UserAPI : AutoCloseable {
      *
      * If no indexing is currently happening for that path, this will cancel next indexing attempt for it.
      *
-     * It may be racy, if cancelling of some path intersects with another indexing in that path, and is therefore
-     * not thread-safe.
+     * It may be racy, if cancelling of some path intersects with another indexing in that path (e.g. we start indexing
+     * path A, we start indexing path B which is a subtree of A, then we cancel A), and is therefore not thread-safe.
      *
      */
     fun cancelIndexing(path: String) = indexCanceller.cancel(path)
