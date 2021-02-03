@@ -39,7 +39,7 @@ class WatchService(
         qLuceneExecutorService.submit(watcher)
     }
 
-    fun attachWatcherToRootDirAndIndex(path: Path): Pair<DirectoryWatcher?, Set<String>> {
+    fun attachWatcherToRootDirAndIndex(path: Path): Triple<DirectoryWatcher?, Set<String>, String?> {
         val addedFileIds = HashSet<String>()
         val phaser = Phaser(1)
 
@@ -50,11 +50,11 @@ class WatchService(
 
             // wait until all file indexing tasks which we have submitted in createWatcher method finish executing
             phaser.arriveAndAwaitAdvance()
-            Pair(watcher, addedFileIds)
+            Triple(watcher, addedFileIds, null)
         } catch (e: IOException) {
             // this library throws security exceptions and other access ones
             logger.error(e.message)
-            Pair(null, addedFileIds)
+            Triple(null, addedFileIds, e.toString())
         }
     }
 

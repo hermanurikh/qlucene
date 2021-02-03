@@ -70,7 +70,7 @@ class FileRegistrationFacade @Autowired constructor(
                     registeredRoots.add(filePath)
                     FileRegistrationSuccessful(path)
                 } else {
-                    val (watcher, addedFileIds) = watchService.attachWatcherToRootDirAndIndex(filePath)
+                    val (watcher, addedFileIds, errorMessage) = watchService.attachWatcherToRootDirAndIndex(filePath)
                     if (!indexCanceller.isCancelled(fileId) && watcher != null) {
                         registeredRoots.add(filePath)
                         // these fileIds may be there from previous indexing waiting for clean-up, so remove them
@@ -81,7 +81,8 @@ class FileRegistrationFacade @Autowired constructor(
                         // add addedFileIds to blacklist and clean up
                         fileIdsToRemove.addAll(addedFileIds)
                         indexCanceller.resetState(fileId)
-                        if (watcher != null) DirectoryRegistrationCancelled(path) else DirectoryRegistrationFailed(path)
+                        if (watcher != null) DirectoryRegistrationCancelled(path)
+                        else DirectoryRegistrationFailed(path, errorMessage!!)
                     }
                 }
             }

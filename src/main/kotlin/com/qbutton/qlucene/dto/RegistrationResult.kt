@@ -14,7 +14,7 @@ class FileFormatUnsupported(path: String) : RegistrationResult("File $path forma
 
 class DirectoryRegistrationSuccessful(path: String) : RegistrationResult("Successfully registered directory: $path")
 class DirectoryRegistrationCancelled(path: String) : RegistrationResult("Directory $path indexing was cancelled")
-class DirectoryRegistrationFailed(path: String) : RegistrationResult("Directory $path indexing failed, see log for details")
+class DirectoryRegistrationFailed(path: String, errorMessage: String) : RegistrationResult("Directory $path indexing failed: $errorMessage")
 class DirectoryAlreadyRegistered(path: String) : RegistrationResult("Directory $path is already registered")
 
 class AbnormalFileRegistrationResult(path: String) : RegistrationResult("File $path is not a directory or a normal file")
