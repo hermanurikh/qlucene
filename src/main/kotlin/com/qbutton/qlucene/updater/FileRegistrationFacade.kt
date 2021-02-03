@@ -9,6 +9,7 @@ import com.qbutton.qlucene.common.Locker
 import com.qbutton.qlucene.common.RegisteredRoots
 import com.qbutton.qlucene.dto.DirectoryAlreadyRegistered
 import com.qbutton.qlucene.dto.DirectoryRegistrationCancelled
+import com.qbutton.qlucene.dto.DirectoryRegistrationFailed
 import com.qbutton.qlucene.dto.DirectoryRegistrationSuccessful
 import com.qbutton.qlucene.dto.DirectoryUnregistrationSuccessful
 import com.qbutton.qlucene.dto.FileAlreadyRegistered
@@ -70,17 +71,17 @@ class FileRegistrationFacade @Autowired constructor(
                     FileRegistrationSuccessful(path)
                 } else {
                     val (watcher, addedFileIds) = watchService.attachWatcherToRootDirAndIndex(filePath)
-                    if (!indexCanceller.isCancelled(fileId)) {
+                    if (!indexCanceller.isCancelled(fileId) && watcher != null) {
                         registeredRoots.add(filePath)
                         // these fileIds may be there from previous indexing waiting for clean-up, so remove them
                         fileIdsToRemove.removeAll(addedFileIds)
                         DirectoryRegistrationSuccessful(path)
                     } else {
-                        watcher.close()
+                        watcher?.close()
                         // add addedFileIds to blacklist and clean up
                         fileIdsToRemove.addAll(addedFileIds)
                         indexCanceller.resetState(fileId)
-                        DirectoryRegistrationCancelled(path)
+                        if (watcher != null) DirectoryRegistrationCancelled(path) else DirectoryRegistrationFailed(path)
                     }
                 }
             }

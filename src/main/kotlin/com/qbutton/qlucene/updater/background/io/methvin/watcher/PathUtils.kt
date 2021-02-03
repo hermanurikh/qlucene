@@ -2,6 +2,7 @@ package com.qbutton.qlucene.updater.background.io.methvin.watcher
 
 import io.methvin.watcher.hashing.FileHash
 import io.methvin.watcher.hashing.FileHasher
+import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
@@ -27,6 +28,9 @@ import java.util.SortedMap
 */
 
 object PathUtils {
+
+    private val logger = LoggerFactory.getLogger(PathUtils::class.java)
+
     fun hash(fileHasher: FileHasher, path: Path?): FileHash? {
         return try {
             if (Files.isDirectory(path)) {
@@ -100,6 +104,11 @@ object PathUtils {
 
                 override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
                     return if (onFile(file)) FileVisitResult.CONTINUE else FileVisitResult.SKIP_SUBTREE
+                }
+
+                override fun visitFileFailed(file: Path, exc: IOException?): FileVisitResult {
+                    logger.error("visit $file failed: $exc")
+                    return FileVisitResult.SKIP_SUBTREE
                 }
             }
         )

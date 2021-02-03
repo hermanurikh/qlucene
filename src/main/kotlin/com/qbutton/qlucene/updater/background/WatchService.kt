@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
+import java.io.IOException
 import java.nio.file.Path
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
@@ -38,17 +39,23 @@ class WatchService(
         qLuceneExecutorService.submit(watcher)
     }
 
-    fun attachWatcherToRootDirAndIndex(path: Path): Pair<DirectoryWatcher, Set<String>> {
+    fun attachWatcherToRootDirAndIndex(path: Path): Pair<DirectoryWatcher?, Set<String>> {
         val addedFileIds = HashSet<String>()
         val phaser = Phaser(1)
 
-        val watcher = createWatcher(path, addedFileIds, phaser)
-        directoryWatchers.add(watcher)
-        watcher.watchAsync(qLuceneExecutorService)
+        return try {
+            val watcher = createWatcher(path, addedFileIds, phaser)
+            directoryWatchers.add(watcher)
+            watcher.watchAsync(qLuceneExecutorService)
 
-        // wait until all file indexing tasks which we have submitted in createWatcher method finish executing
-        phaser.arriveAndAwaitAdvance()
-        return Pair(watcher, addedFileIds)
+            // wait until all file indexing tasks which we have submitted in createWatcher method finish executing
+            phaser.arriveAndAwaitAdvance()
+            Pair(watcher, addedFileIds)
+        } catch (e: IOException) {
+            // this library throws security exceptions and other access ones
+            logger.error(e.message)
+            Pair(null, addedFileIds)
+        }
     }
 
     /**

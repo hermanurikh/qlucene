@@ -94,7 +94,10 @@ class DirectoryWatcher(
             isTraversalCancelledForId,
             indexFileAction
         )
-        registerAll(path, path)
+        val rootPathId = toFileIdAction(path.toAbsolutePath())
+        if (!isTraversalCancelledForId(rootPathId)) {
+            registerAll(path, path)
+        }
     }
 
     private fun osDefaultWatchService(): WatchService {
