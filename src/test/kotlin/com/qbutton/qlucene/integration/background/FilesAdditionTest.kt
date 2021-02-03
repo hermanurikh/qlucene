@@ -16,8 +16,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertAll
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.util.FileSystemUtils
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -25,11 +23,9 @@ import java.nio.file.Paths
 /**
  * This test checks that background events related to file addition are caught and handled properly.
  */
-@SpringBootTest
 class FilesAdditionTest {
 
-    @Autowired
-    private lateinit var userAPI: UserAPI
+    private val userAPI = UserAPI()
 
     @BeforeEach
     fun createDirs() {

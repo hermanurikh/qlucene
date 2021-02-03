@@ -15,7 +15,6 @@ import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Phaser
-import javax.annotation.PreDestroy
 
 @Component
 class WatchService(
@@ -42,6 +41,7 @@ class WatchService(
     fun attachWatcherToRootDirAndIndex(path: Path): Pair<DirectoryWatcher, Set<String>> {
         val addedFileIds = HashSet<String>()
         val phaser = Phaser(1)
+
         val watcher = createWatcher(path, addedFileIds, phaser)
         directoryWatchers.add(watcher)
         watcher.watchAsync(qLuceneExecutorService)
@@ -64,10 +64,13 @@ class WatchService(
         indexFileAction = {
             phaser.register()
             qLuceneExecutorService.submit {
-                if (fileValidator.isValid(it)) {
-                    fileUpdaterFacade.update(fileIdConverter.toId(it.toAbsolutePath()))
+                try {
+                    if (fileValidator.isValid(it)) {
+                        fileUpdaterFacade.update(fileIdConverter.toId(it.toAbsolutePath()))
+                    }
+                } finally {
+                    phaser.arriveAndDeregister()
                 }
-                phaser.arriveAndDeregister()
             }
         },
         maxDepth = maxDepth,
@@ -78,8 +81,7 @@ class WatchService(
         directoryWatchers.clear()
     }
 
-    @PreDestroy
-    fun stopWatchers() {
+    override fun close() {
         logger.info("stopping watchers")
         directoryWatchers.forEach { it.close() }
     }

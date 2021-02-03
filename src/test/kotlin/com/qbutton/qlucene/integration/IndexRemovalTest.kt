@@ -5,17 +5,13 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
 
 /**
  * This test checks removal from index.
  */
-@SpringBootTest
 class IndexRemovalTest {
 
-    @Autowired
-    private lateinit var userAPI: UserAPI
+    private val userAPI = UserAPI()
 
     @BeforeEach
     fun clearState() {

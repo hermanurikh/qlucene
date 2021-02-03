@@ -13,8 +13,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.util.FileSystemUtils
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -22,13 +20,11 @@ import java.nio.file.Paths
 /**
  * This test checks that background events related to file deletion are caught and handled properly.
  */
-@SpringBootTest
 class FilesDeletionTest {
 
     private val fileToDeletePath = "$tmpTestNestedDir${fileSeparator}$nestedFileName".toAbsolutePath()
 
-    @Autowired
-    private lateinit var userAPI: UserAPI
+    private val userAPI = UserAPI()
 
     @BeforeEach
     fun createFilesAndDirs() {

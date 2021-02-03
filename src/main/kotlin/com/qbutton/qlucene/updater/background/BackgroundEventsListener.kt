@@ -1,6 +1,5 @@
 package com.qbutton.qlucene.updater.background
 
-import com.qbutton.qlucene.UserAPI
 import com.qbutton.qlucene.common.FileIdConverter
 import com.qbutton.qlucene.common.FileValidator
 import com.qbutton.qlucene.common.FilteredOutRoots
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Component
  */
 @Component
 class BackgroundEventsListener @Autowired constructor(
-    private val userAPI: UserAPI,
     private val fileValidator: FileValidator,
     private val fileIdConverter: FileIdConverter,
     private val filteredOutRoots: FilteredOutRoots,

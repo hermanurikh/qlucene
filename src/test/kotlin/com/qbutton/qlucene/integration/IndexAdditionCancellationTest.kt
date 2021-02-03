@@ -5,8 +5,6 @@ import com.qbutton.qlucene.dto.DirectoryRegistrationCancelled
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
 import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -14,11 +12,9 @@ import java.util.concurrent.Executors
 /**
  * This test checks additions which are cancelled.
  */
-@SpringBootTest
 class IndexAdditionCancellationTest {
 
-    @Autowired
-    private lateinit var userAPI: UserAPI
+    private val userAPI = UserAPI()
 
     @BeforeEach
     fun clearState() {

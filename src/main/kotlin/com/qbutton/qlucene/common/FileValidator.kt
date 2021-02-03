@@ -15,8 +15,9 @@ class FileValidator(
     @Value("\${file.max-indexed-size}")
     private val maxFileSize: Long,
     @Value("\${file.supported-extensions}")
-    private val supportedExtensions: Set<String>
+    supportedExtensions: String
 ) {
+    private val supportedExtensions: Set<String> = supportedExtensions.split(",").toSet()
 
     fun validateFileOkForRegistration(path: Path): RegistrationResult? {
         val stringPath = path.toString()

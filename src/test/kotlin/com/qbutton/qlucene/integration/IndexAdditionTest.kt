@@ -7,21 +7,15 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertAll
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.test.context.SpringBootTest
 
 /**
  * This test checks operations which are triggered by using UserAPI, e.g. direct addition to index.
  */
-@SpringBootTest
 class IndexAdditionTest {
 
-    @Autowired
-    private lateinit var userAPI: UserAPI
+    private var userAPI = UserAPI()
 
-    @Value("\${reducer.size-based.max-size}")
-    private var maxOutputSize: Int = 0
+    private var maxOutputSize: Int = 20
 
     @BeforeEach
     fun clearState() {
