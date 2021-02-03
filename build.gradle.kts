@@ -17,6 +17,8 @@ repositories {
 
 apply(plugin = "org.jlleitschuh.gradle.ktlint")
 
+val slf4jVersion = "1.7.30"
+
 dependencies {
     implementation("org.springframework:spring-context:5.3.3")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
@@ -25,8 +27,8 @@ dependencies {
 
     // for Apache Watchdog
     implementation("log4j:log4j:1.2.17")
-    implementation("org.slf4j:slf4j-api:1.7.30")
-    implementation("org.slf4j:slf4j-simple:1.7.30")
+    implementation("org.slf4j:slf4j-api:$slf4jVersion")
+    implementation("org.slf4j:slf4j-simple:$slf4jVersion")
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.0")
 }
 
